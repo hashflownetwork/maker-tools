@@ -2,10 +2,35 @@
   "name": "maker-tools",
   "version": "0.0.1",
   "description": "Tools to help market makers on Hashflow operate on the exchange",
+  "scripts": {
+    "eslint": "eslint ./src --ext .ts,.tsx",
+    "prettier": "prettier --config ./.prettierrc.js --write .",
+    "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env"
+  },
   "engines": {
     "node": ">=14.18.1",
     "yarn": "^1.22.10"
   },
   "author": "Michael Blind <michael@hashflow.com>",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@hashflow/sdk": "^1.2.4",
+    "@hashflow/taker-js": "^0.0.2",
+    "bignumber.js": "^9.1.1",
+    "ethers": "5.7.0",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.22",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.34.0",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  }
 }
