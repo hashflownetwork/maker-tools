@@ -1,0 +1,27 @@
+{
+  "name": "maker-tools",
+  "version": "0.0.1",
+  "description": "Tools to help market makers on Hashflow operate on the exchange",
+  "scripts": {
+    "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env"
+  },
+  "engines": {
+    "node": ">=14.18.1",
+    "yarn": "^1.22.10"
+  },
+  "author": "Michael Blind <michael@hashflow.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@hashflow/sdk": "^1.2.4",
+    "@hashflow/taker-js": "^0.0.2",
+    "bignumber.js": "^9.1.1",
+    "ethers": "5.7.0",
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.22",
+    "dotenv": "^16.0.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5"
+  }
+}

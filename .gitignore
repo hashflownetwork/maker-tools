@@ -1,0 +1,27 @@
+# Package Manager
+node_modules/
+yarn-error.log
+
+# macOS Metadata
+.DS_Store
+
+# Build Output
+dist/
+build/
+.tsbuildinfo
+.next
+
+# Deployment Artifacts
+deployment-files/
+deployment/docker-compose.yml
+
+# Environment Variables
+.env
+
+# SQLite
+dump.rdb
+
+# Generated script output
+src/scripts/gen/*
+!src/scripts/gen/.gitkeep
+
