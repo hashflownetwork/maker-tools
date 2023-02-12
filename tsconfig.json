@@ -1,0 +1,39 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "allowJs": false,
+    "jsx": "preserve",
+    "outDir": "./dist",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/*", "*"]
+    },
+    "isolatedModules": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "moduleResolution": "node",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/typings",
+      "./src/dorado/typings"
+    ],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./.tsbuildinfo"
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "**/*.js"],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "files": true
+  }
+}
