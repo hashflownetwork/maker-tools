@@ -221,6 +221,11 @@ async function handler(): Promise<void> {
           )
         );
         const maxExpectedDigits = Math.max(maxBaseDigits, maxQuoteDigits);
+        const maxRfqIdLength = Math.max(
+          ...results.map(r =>
+            r.rfqIds?.length ? JSON.stringify(r.rfqIds).length : 0
+          )
+        );
 
         for (let i = 0; i < results.length; i++) {
           const r = results[i];
@@ -270,9 +275,15 @@ async function handler(): Promise<void> {
           const failStr = r?.failMsg ? `failed! ${r.failMsg}` : '';
 
           const indexStr = i.toString().padStart(2, '0');
+          const rfqIdStr = r?.rfqIds?.length
+            ? JSON.stringify(r.rfqIds)
+            : '[--]';
 
           console.log(
-            `[${indexStr}]  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}`
+            `[${indexStr}] ${rfqIdStr.padEnd(
+              maxRfqIdLength,
+              ' '
+            )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}`
           );
         }
 
@@ -310,6 +321,7 @@ async function testRfqs(
     deviationBps?: BigNumber;
     feeBps?: number;
     failMsg?: string;
+    rfqIds?: string[];
   }[];
 }> {
   let numSuccess = 0;
@@ -341,6 +353,7 @@ async function testRfqs(
     deviationBps?: BigNumber;
     feeBps?: number;
     failMsg?: string;
+    rfqIds?: string[];
   }> => {
     const { baseToken, quoteToken } = entry;
 
@@ -390,6 +403,7 @@ async function testRfqs(
           wallet,
           marketMakers: [maker],
           feeBps,
+          debug: true,
         }),
       ]);
 
@@ -444,7 +458,10 @@ async function testRfqs(
           quoteAmount,
           expectedAmount,
           feeBps,
-          failMsg: `No quote data. Received: ${JSON.stringify({ rfq })}`,
+          rfqIds: rfq.internalRfqIds ?? [],
+          failMsg: `No quote data. Received error: ${JSON.stringify(
+            rfq.error
+          )}`,
         };
       }
       const receivedAmountDecimals = new BigNumber(
@@ -481,6 +498,7 @@ async function testRfqs(
         expectedAmount,
         deviationBps,
         feeBps,
+        rfqIds: rfq.internalRfqIds ?? [],
       };
     } catch (err) {
       return {
