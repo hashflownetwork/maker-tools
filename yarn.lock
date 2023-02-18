@@ -24,10 +24,10 @@
     minimatch "^3.1.2"
     strip-json-comments "^3.1.1"
 
-"@eth-optimism/contracts-bedrock@0.11.3":
-  version "0.11.3"
-  resolved "https://registry.yarnpkg.com/@eth-optimism/contracts-bedrock/-/contracts-bedrock-0.11.3.tgz#102c4de7d741f28bf7ee23ac7866660a0eb40a9e"
-  integrity sha512-WOP69fdv7TIfvTD6pEedW0OVwYe39aX2DXqvKDpDhJNF0W9miHZUY7UaNKiSqlE37SuQJpC4VvGfls/gwfL1Mw==
+"@eth-optimism/contracts-bedrock@0.11.4":
+  version "0.11.4"
+  resolved "https://registry.yarnpkg.com/@eth-optimism/contracts-bedrock/-/contracts-bedrock-0.11.4.tgz#6c3ef886b6a5f671fcfd7d749eee20d91633fe93"
+  integrity sha512-aUjSEwaxQ2UySgR4vi9b2+zH1OLZfoR1XHQaIWOfeINp9WEQ8qTUnaYiuCjdyPKv09wrXQlU6HqfDV/s0o8SgA==
   dependencies:
     "@eth-optimism/core-utils" "^0.12.0"
     "@openzeppelin/contracts" "4.7.3"
@@ -67,12 +67,12 @@
     chai "^4.3.4"
 
 "@eth-optimism/sdk@^1.6.2":
-  version "1.10.1"
-  resolved "https://registry.yarnpkg.com/@eth-optimism/sdk/-/sdk-1.10.1.tgz#843384985f00e443d6ab1252fa566cdd8421773e"
-  integrity sha512-ypoHVeMZo+PHgujsp2n/LTxkAOHM1P4gmDf1JigGNdQlelu9/83eYQPr9BYHDaYETvCi1YKTmjnT+tqqqVGLeg==
+  version "1.10.2"
+  resolved "https://registry.yarnpkg.com/@eth-optimism/sdk/-/sdk-1.10.2.tgz#cbbac2c5c454bc01650d72b5c8fecf4f7d9e4531"
+  integrity sha512-g/WyKrB0K9fBXu2fjegtkq/kvogZBggTYVjb4SMKM4wPIAkll/Qdvib48Pjvb8Ybe7JmezXx29yRe1KjPsqXkw==
   dependencies:
     "@eth-optimism/contracts" "0.5.40"
-    "@eth-optimism/contracts-bedrock" "0.11.3"
+    "@eth-optimism/contracts-bedrock" "0.11.4"
     "@eth-optimism/core-utils" "0.12.0"
     lodash "^4.17.21"
     merkletreejs "^0.2.27"
@@ -484,7 +484,20 @@
     "@openzeppelin/contracts" "^4.7.3"
     "@openzeppelin/contracts-upgradeable" "^4.7.3"
 
-"@hashflow/sdk@^1.0.1", "@hashflow/sdk@^1.2.4":
+"@hashflow/sdk@^1.0.1":
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/@hashflow/sdk/-/sdk-1.2.5.tgz#e27d7c0ef01ec595a3b3e0594124d98b9a76c1ca"
+  integrity sha512-lLoHN7bLifdyYN3RZf3rqk0uqTX3bxj2j0Z3bA2GzhHtwtleq0/EbEyns5OsNk1aaWbJzUU0xSfHsB51qJ6sGA==
+  dependencies:
+    "@eth-optimism/sdk" "^1.6.2"
+    "@ethersproject/abi" "^5.7.0"
+    "@ethersproject/bytes" "^5.7.0"
+    "@ethersproject/providers" "^5.7.0"
+    "@hashflow/governance" "1.0.4"
+    "@hashflow/hashverse-contracts" "1.0.2"
+    "@hashflow/protocol" "1.0.3"
+
+"@hashflow/sdk@^1.2.4":
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/@hashflow/sdk/-/sdk-1.2.4.tgz#edf2d7208d04e6bee1bf69aeaa7df68156db30b1"
   integrity sha512-gEhRudo8e3x3lwzdsfZfhXQHE0C63sH8tcHIT2K/L6sEPUkIz7jbTkfQFaiDVcpGjvUDlCKCEjqGHWE8btnk7Q==
@@ -497,10 +510,10 @@
     "@hashflow/hashverse-contracts" "1.0.2"
     "@hashflow/protocol" "1.0.3"
 
-"@hashflow/taker-js@^0.0.2":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.0.2.tgz#cadcd396ab29ce2fab1cb94f8a2b6f9bc8658c54"
-  integrity sha512-3Yly8Eglvs06OpVbnBcNDBfPSmkEiJRSA8HsBwbPrfppagFOnzLCs6Z0U4A8Ztdnic4rbWVokb7r5YEJ0TxgWg==
+"@hashflow/taker-js@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.0.4.tgz#affd49b2286ae47b6bd4db1cd9328a75328a4c84"
+  integrity sha512-NEc1qIX/vbuTjBlEuoOuVF/oUaWc9XuERl2BzpIlt82PD5XYxeS3c/eKO5NEp43b+OuO2+IuOPfModV9jx49QA==
   dependencies:
     "@hashflow/sdk" "^1.0.1"
     axios "^0.27.2"
@@ -3981,9 +3994,9 @@ unbox-primitive@^1.0.2:
     which-boxed-primitive "^1.0.2"
 
 undici@^5.14.0:
-  version "5.18.0"
-  resolved "https://registry.yarnpkg.com/undici/-/undici-5.18.0.tgz#e88a77a74d991a30701e9a6751e4193a26fabda9"
-  integrity sha512-1iVwbhonhFytNdg0P4PqyIAXbdlVZVebtPDvuM36m66mRw4OGrCm2MYynJv/UENFLdP13J1nPVQzVE2zTs1OeA==
+  version "5.19.1"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-5.19.1.tgz#92b1fd3ab2c089b5a6bd3e579dcda8f1934ebf6d"
+  integrity sha512-YiZ61LPIgY73E7syxCDxxa3LV2yl3sN8spnIuTct60boiiRaE1J8mNWHO8Im2Zi/sFrPusjLlmRPrsyraSqX6A==
   dependencies:
     busboy "^1.6.0"
 
