@@ -64,7 +64,11 @@ async function handler(): Promise<void> {
   process.stdout.write('Finding active makers ... ');
   const makers: string[] = [];
   try {
-    const chainMakers = await hashflow.getMarketMakers(chainId);
+    const chainMakers = await hashflow.getMarketMakers(
+      chainId,
+      undefined,
+      maker
+    );
     for (const externalMaker of chainMakers) {
       const makerPrefix = externalMaker.split('_')[0];
       if (makerPrefix === maker) {
