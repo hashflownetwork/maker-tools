@@ -1,6 +1,6 @@
 {
   "name": "maker-tools",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Tools to help market makers on Hashflow operate on the exchange",
   "scripts": {
     "eslint": "eslint ./src --ext .ts,.tsx",

@@ -123,8 +123,8 @@ async function handler(): Promise<void> {
         if (
           pairProvided &&
           !(
-            pair.baseToken === argv.baseToken &&
-            pair.quoteToken === argv.quote_token
+            pair.baseTokenName === argv.base_token &&
+            pair.quoteTokenName === argv.quote_token
           )
         ) {
           continue;
