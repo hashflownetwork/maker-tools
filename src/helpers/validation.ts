@@ -1,6 +1,6 @@
-import { ChainId } from '@hashflow/sdk';
+import { Chain } from '@hashflow/taker-js';
 
-import { CHAIN_IDS,Environment, ENVIRONMENTS } from './types';
+import { CHAIN_IDS, CHAIN_TYPES, Environment, ENVIRONMENTS } from './types';
 
 export function validateMakerName(name: string): void {
   if (!/^mm[0-9]+$/.test(name)) {
@@ -10,8 +10,9 @@ export function validateMakerName(name: string): void {
   }
 }
 
-export function validateChain(chain: ChainId): void {
-  if (!CHAIN_IDS.includes(chain)) {
+export function validateChain(chain: Chain): void {
+  // TODO: change CHAIN_IDS/CHAIN_TYPES -> CHAINS
+  if (!CHAIN_IDS.includes(chain.chainId) && CHAIN_TYPES.includes(chain.chainType)) {
     throw new Error(`Unrecognized chain: ${chain}`);
   }
 }

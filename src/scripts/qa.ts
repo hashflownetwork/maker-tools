@@ -1,11 +1,11 @@
-import { ChainId } from '@hashflow/sdk';
-import { HashflowApi } from '@hashflow/taker-js';
+import { Chain, ChainId, ChainType, HashflowApi } from '@hashflow/taker-js';
+import { PriceLevel } from '@hashflow/taker-js/dist/types/common';
 import BigNumber from 'bignumber.js';
 import yargs from 'yargs/yargs';
 
 import { computeLevelsQuote } from '../helpers/levels';
 import { convertFromDecimals, convertToDecimals } from '../helpers/token';
-import { Environment, PriceLevel, Token } from '../helpers/types';
+import { Environment, Token } from '../helpers/types';
 import {
   validateAddress,
   validateChain,
@@ -16,6 +16,7 @@ import {
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
   chain: { number: true, demandOption: true },
+  chainType: { string: true, default: 'evm' },
   base_token: { string: true, default: undefined },
   quote_token: { string: true, default: undefined },
   env: { string: true, default: 'staging' },
@@ -32,6 +33,7 @@ async function handler(): Promise<void> {
   }
   validateAddress(QA_ADDRESS);
 
+  const SOURCE = process.env.SOURCE ?? 'qa';
   const AUTH_KEY = process.env.AUTH_KEY;
   if (!AUTH_KEY) {
     throw new Error(`Please specify your auth key in src/.env under AUTH_KEY`);
@@ -40,13 +42,16 @@ async function handler(): Promise<void> {
   const argv = await parser.argv;
 
   const maker = argv.maker;
-  const chainId = argv.chain as ChainId;
+  const chain: Chain = {
+    chainId: argv.chain as ChainId,
+    chainType: argv.chainType as ChainType,
+  };
   const env = argv.env as Environment;
   validateMakerName(maker);
-  validateChain(chainId);
+  validateChain(chain);
   validateEnvironment(env);
 
-  const hashflow = new HashflowApi('taker', 'qa', AUTH_KEY, env);
+  const hashflow = new HashflowApi('taker', SOURCE, AUTH_KEY, env);
 
   const numRequests = argv.num_requests;
   const delayMs = argv.delay_ms;
@@ -56,7 +61,7 @@ async function handler(): Promise<void> {
   const pairProvided = argv.base_token && argv.quote_token;
 
   process.stdout.write(
-    `QA testing maker '${maker}' against ${env} on chain ${chainId}${
+    `QA testing maker '${maker}' against ${env} on chain ${chain.chainType}:${chain.chainId} ${
       pairProvided ? ` for ${argv.base_token}-${argv.quote_token}` : ''
     } with ${numRequests} requests/pair${delayMsStr}.\n\n`
   );
@@ -65,7 +70,7 @@ async function handler(): Promise<void> {
   const makers: string[] = [];
   try {
     const chainMakers = await hashflow.getMarketMakers(
-      chainId,
+      chain,
       undefined,
       maker
     );
@@ -101,7 +106,7 @@ async function handler(): Promise<void> {
   process.stdout.write(`Fetching levels for ${makersString} ... `);
 
   try {
-    const levels = await hashflow.getPriceLevels(chainId, makers);
+    const levels = await hashflow.getPriceLevels(chain, makers);
     const retrievedMakers = Object.keys(levels);
     if (!retrievedMakers.length) {
       process.stdout.write(`failed!  No maker levels.\n`);
@@ -138,13 +143,13 @@ async function handler(): Promise<void> {
         }
 
         const baseToken = {
-          chainId,
+          chain,
           address: entry.pair.baseToken,
           name: entry.pair.baseTokenName,
           decimals: entry.pair.baseTokenDecimals,
         };
         const quoteToken = {
-          chainId,
+          chain,
           address: entry.pair.quoteToken,
           name: entry.pair.quoteTokenName,
           decimals: entry.pair.quoteTokenDecimals,
@@ -170,15 +175,15 @@ async function handler(): Promise<void> {
           numRequests,
           delayMs,
           maker,
-          chainId,
+          chain,
           entry
         );
 
         const levels = entry.levels;
-        const minLevel = new BigNumber(levels[0]?.level ?? '0')
+        const minLevel = new BigNumber(levels[0]?.q ?? '0')
           .precision(7)
           .toFormat();
-        const maxLevel = new BigNumber(levels[levels.length - 1]?.level ?? '0')
+        const maxLevel = new BigNumber(levels[levels.length - 1]?.q ?? '0')
           .precision(7)
           .toFormat();
 
@@ -311,7 +316,7 @@ async function testRfqs(
   numRequests: number,
   delayMs: number,
   maker: string,
-  chainId: ChainId,
+  chain: Chain,
   entry: { baseToken: Token; quoteToken: Token; levels: PriceLevel[] }
 ): Promise<{
   successRate: number;
@@ -341,10 +346,10 @@ async function testRfqs(
     );
   }
 
-  const minLevel = new BigNumber(preLevels[0]?.level ?? '0');
+  const minLevel = new BigNumber(preLevels[0]?.q ?? '0');
   const maxLevel = BigNumber.max(
-    new BigNumber(preLevels[preLevels.length - 1]?.level ?? '0').multipliedBy(
-      0.95
+    new BigNumber(preLevels[preLevels.length - 1]?.q ?? '0').multipliedBy(
+        0.95
     ),
     minLevel
   );
@@ -394,12 +399,14 @@ async function testRfqs(
       new BigNumber(feeBps).dividedBy(10_000)
     );
 
+    console.info(`converted ${provided} ${provided === 'base' ? baseAmount : quoteAmount} => ${baseTokenAmount ?? quoteTokenAmount}`);
+
     try {
       /* Request fresh levels and RFQ */
       const [levelsMap, rfq] = await Promise.all([
-        hashflow.getPriceLevels(chainId, [maker]),
+        hashflow.getPriceLevels(chain, [maker]),
         hashflow.requestQuote({
-          chainId,
+          baseChain: chain, // TODO: support specifying quoteChain as well
           baseToken: baseToken.address,
           quoteToken: quoteToken.address,
           baseTokenAmount,
@@ -409,6 +416,7 @@ async function testRfqs(
           feeBps,
           debug: true,
         }),
+
       ]);
 
       /* Parse levels */
@@ -453,9 +461,11 @@ async function testRfqs(
         expectedAmount,
         expectedToken
       );
-
+      if (rfq.status === 'success') {
+        rfq.quotes
+      }
       /* Check quote data*/
-      if (!rfq.quoteData) {
+      if (rfq.status === 'fail') {
         return {
           provided,
           baseAmount,
@@ -470,8 +480,8 @@ async function testRfqs(
       }
       const receivedAmountDecimals = new BigNumber(
         provided === 'base'
-          ? rfq.quoteData?.quoteTokenAmount ?? '0'
-          : rfq.quoteData?.baseTokenAmount ?? '0'
+          ? rfq?.quotes?.[0]?.quoteData?.quoteTokenAmount ?? '0'
+          : rfq?.quotes?.[0]?.quoteData?.baseTokenAmount ?? '0'
       );
       const receivedAmount = convertFromDecimals(
         receivedAmountDecimals,
