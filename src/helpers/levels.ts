@@ -46,19 +46,20 @@ export function computeLevelsQuote(
     return { failure: 'below_minimum_amount' };
   }
 
+  let cumulativeBaseAmount = quote.baseAmount;
   for (let i = 1; i < levels.length; i++) {
     const nextLevel = levels[i]!;
-    const nextLevelDepth = nextLevel.q.minus(levels[i - 1]!.q);
+    cumulativeBaseAmount = cumulativeBaseAmount.plus(nextLevel.q);
     const nextLevelQuote = quote.quoteAmount.plus(
-      nextLevelDepth.multipliedBy(nextLevel.p)
+      nextLevel.q.multipliedBy(nextLevel.p)
     );
-    if (reqBaseAmount && reqBaseAmount.lte(nextLevel.q)) {
+    if (reqBaseAmount && reqBaseAmount.lte(cumulativeBaseAmount)) {
       const baseDifference = reqBaseAmount.minus(quote.baseAmount);
       const quoteAmount = quote.quoteAmount.plus(
         baseDifference.multipliedBy(nextLevel.p)
       );
       return { amount: quoteAmount };
-    } else if (reqQuoteAmount && reqQuoteAmount.lte(nextLevelQuote)) {
+    } else if (reqQuoteAmount && reqQuoteAmount.lte(cumulativeBaseAmount)) {
       const quoteDifference = reqQuoteAmount.minus(quote.quoteAmount);
       const baseAmount = quote.baseAmount.plus(
         quoteDifference.dividedBy(nextLevel.p)
