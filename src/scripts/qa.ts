@@ -1,6 +1,7 @@
 import { ChainId } from '@hashflow/sdk';
 import { HashflowApi } from '@hashflow/taker-js';
 import BigNumber from 'bignumber.js';
+import { getSecretValue } from 'helpers/secrets';
 import yargs from 'yargs/yargs';
 
 import { computeLevelsQuote } from '../helpers/levels';
@@ -23,6 +24,28 @@ const parser = yargs(process.argv.slice(2)).options({
   delay_ms: { number: true, default: 0 },
 });
 
+async function getAuthKey(): Promise<{name: string, key: string}> {
+  const AUTH_SECRET_NAME = process.env.AUTH_SECRET_NAME;
+  if (!AUTH_SECRET_NAME) {
+    const AUTH_KEY = process.env.AUTH_KEY;
+    if (!AUTH_KEY) {
+      throw new Error(`Please specify your auth key in src/.env under AUTH_KEY`);
+    }
+    return { name: 'qa', key: AUTH_KEY };
+  } else {
+    const AUTH_SECRET_REGION = process.env.AUTH_SECRET_REGION;
+    if (!AUTH_SECRET_REGION) {
+      throw new Error(`Please specify your AUTH_SECRET_REGION in src/.env`);
+    }
+    const secretJson = await getSecretValue(AUTH_SECRET_REGION, AUTH_SECRET_NAME);
+    const { name, key } = JSON.parse(secretJson);
+    if (!key) {
+      throw new Error(`Unable to parse key from secrets manager`);
+    }
+    return { name, key };
+  }
+}
+
 async function handler(): Promise<void> {
   const QA_ADDRESS = process.env.QA_TAKER_ADDRESS;
   if (!QA_ADDRESS) {
@@ -32,10 +55,8 @@ async function handler(): Promise<void> {
   }
   validateAddress(QA_ADDRESS);
 
-  const AUTH_KEY = process.env.AUTH_KEY;
-  if (!AUTH_KEY) {
-    throw new Error(`Please specify your auth key in src/.env under AUTH_KEY`);
-  }
+
+  const {name, key} = await getAuthKey();
 
   const argv = await parser.argv;
 
@@ -46,7 +67,7 @@ async function handler(): Promise<void> {
   validateChain(chainId);
   validateEnvironment(env);
 
-  const hashflow = new HashflowApi('taker', 'qa', AUTH_KEY, env);
+  const hashflow = new HashflowApi('taker', name, key, env);
 
   const numRequests = argv.num_requests;
   const delayMs = argv.delay_ms;
