@@ -11,7 +11,7 @@ export function validateMakerName(name: string): void {
 }
 
 export function validateChain(chain: Chain): void {
-  // TODO: change CHAIN_IDS/CHAIN_TYPES -> CHAINS
+  // TODO(ENG-2176): change CHAIN_IDS/CHAIN_TYPES -> CHAINS
   if (!CHAIN_IDS.includes(chain.chainId) && CHAIN_TYPES.includes(chain.chainType)) {
     throw new Error(`Unrecognized chain: ${chain}`);
   }
