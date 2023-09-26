@@ -6,12 +6,8 @@ import yargs from 'yargs/yargs';
 import { computeLevelsQuote } from '../helpers/levels';
 import { convertFromDecimals, convertToDecimals } from '../helpers/token';
 import { Environment, Token } from '../helpers/types';
-import {
-  validateAddress,
-  validateChain,
-  validateEnvironment,
-  validateMakerName,
-} from '../helpers/validation';
+import { validateAddress, validateEnvironment, validateMakerName } from '../helpers/validation';
+export { validateChain } from '@hashflow/taker-js';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
@@ -42,10 +38,9 @@ async function handler(): Promise<void> {
   const argv = await parser.argv;
 
   const maker = argv.maker;
-  const chain: Chain = {
-    chainId: argv.chain as ChainId,
-    chainType: argv.chainType as ChainType,
-  };
+  const chainType = argv.chainType as ChainType;
+  const chainId = argv.chain as ChainId;
+  const chain: Chain = { chainType, chainId };
   const env = argv.env as Environment;
   validateMakerName(maker);
   validateChain(chain);
