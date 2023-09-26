@@ -399,8 +399,6 @@ async function testRfqs(
       new BigNumber(feeBps).dividedBy(10_000)
     );
 
-    console.info(`converted ${provided} ${provided === 'base' ? baseAmount : quoteAmount} => ${baseTokenAmount ?? quoteTokenAmount}`);
-
     try {
       /* Request fresh levels and RFQ */
       const [levelsMap, rfq] = await Promise.all([
