@@ -525,8 +525,6 @@ async function testRfqs(
         feeBps,
         rfqIds: rfq.internalRfqIds ?? [],
       };
-
-      
     } catch (err) {
       return {
         provided,
