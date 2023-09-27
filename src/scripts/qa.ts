@@ -1,4 +1,5 @@
 import { Chain, ChainId, ChainType, HashflowApi } from '@hashflow/taker-js';
+import { validateChain } from '@hashflow/taker-js';
 import { PriceLevel } from '@hashflow/taker-js/dist/types/common';
 import BigNumber from 'bignumber.js';
 import yargs from 'yargs/yargs';
@@ -7,7 +8,6 @@ import { computeLevelsQuote } from '../helpers/levels';
 import { convertFromDecimals, convertToDecimals } from '../helpers/token';
 import { Environment, Token } from '../helpers/types';
 import { validateAddress, validateEnvironment, validateMakerName } from '../helpers/validation';
-export { validateChain } from '@hashflow/taker-js';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
