@@ -7,7 +7,11 @@ import yargs from 'yargs/yargs';
 import { computeLevelsQuote } from '../helpers/levels';
 import { convertFromDecimals, convertToDecimals } from '../helpers/token';
 import { Environment, Token } from '../helpers/types';
-import { validateAddress, validateEnvironment, validateMakerName } from '../helpers/validation';
+import {
+  validateAddress,
+  validateEnvironment,
+  validateMakerName,
+} from '../helpers/validation';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
@@ -56,7 +60,9 @@ async function handler(): Promise<void> {
   const pairProvided = argv.base_token && argv.quote_token;
 
   process.stdout.write(
-    `QA testing maker '${maker}' against ${env} on chain ${chain.chainType}:${chain.chainId} ${
+    `QA testing maker '${maker}' against ${env} on chain ${chain.chainType}:${
+      chain.chainId
+    } ${
       pairProvided ? ` for ${argv.base_token}-${argv.quote_token}` : ''
     } with ${numRequests} requests/pair${delayMsStr}.\n\n`
   );
@@ -64,11 +70,7 @@ async function handler(): Promise<void> {
   process.stdout.write('Finding active makers ... ');
   const makers: string[] = [];
   try {
-    const chainMakers = await hashflow.getMarketMakers(
-      chain,
-      undefined,
-      maker
-    );
+    const chainMakers = await hashflow.getMarketMakers(chain, undefined, maker);
     for (const externalMaker of chainMakers) {
       const makerPrefix = externalMaker.split('_')[0];
       if (makerPrefix === maker) {
@@ -343,9 +345,7 @@ async function testRfqs(
 
   const minLevel = new BigNumber(preLevels[0]?.q ?? '0');
   const maxLevel = BigNumber.max(
-    new BigNumber(preLevels[preLevels.length - 1]?.q ?? '0').multipliedBy(
-        0.95
-    ),
+    new BigNumber(preLevels[preLevels.length - 1]?.q ?? '0').multipliedBy(0.95),
     minLevel
   );
 
@@ -409,7 +409,6 @@ async function testRfqs(
           feeBps,
           debug: true,
         }),
-
       ]);
 
       /* Parse levels */
@@ -455,7 +454,7 @@ async function testRfqs(
         expectedToken
       );
       if (rfq.status === 'success') {
-        rfq.quotes
+        rfq.quotes;
       }
       /* Check quote data*/
       if (rfq.status === 'fail') {
@@ -472,7 +471,7 @@ async function testRfqs(
         };
       }
       const receivedAmountDecimals = new BigNumber(
-        provided === 'base'
+        provided === 'base' // TODO(ENG-2177): Add support for multiple quotes per request
           ? rfq?.quotes?.[0]?.quoteData?.quoteTokenAmount ?? '0'
           : rfq?.quotes?.[0]?.quoteData?.baseTokenAmount ?? '0'
       );
