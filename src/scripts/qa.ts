@@ -25,13 +25,15 @@ const parser = yargs(process.argv.slice(2)).options({
   delay_ms: { number: true, default: 0 },
 });
 
-async function getAuthKey(): Promise<{name: string, key: string}> {
+async function getAuthKey(): Promise<{ name: string; key: string }> {
   const AUTH_SECRET_NAME = process.env.AUTH_SECRET_NAME;
   if (!AUTH_SECRET_NAME) {
     const SOURCE = process.env.SOURCE ?? 'qa';
     const AUTH_KEY = process.env.AUTH_KEY;
     if (!AUTH_KEY) {
-      throw new Error(`Please specify your auth key in src/.env under AUTH_KEY`);
+      throw new Error(
+        `Please specify your auth key in src/.env under AUTH_KEY`
+      );
     }
     return { name: SOURCE, key: AUTH_KEY };
   } else {
@@ -39,7 +41,10 @@ async function getAuthKey(): Promise<{name: string, key: string}> {
     if (!AUTH_SECRET_REGION) {
       throw new Error(`Please specify your AUTH_SECRET_REGION in src/.env`);
     }
-    const secretJson = await getSecretValue(AUTH_SECRET_REGION, AUTH_SECRET_NAME);
+    const secretJson = await getSecretValue(
+      AUTH_SECRET_REGION,
+      AUTH_SECRET_NAME
+    );
     const { name, key } = JSON.parse(secretJson);
     if (!key) {
       throw new Error(`Unable to parse key from secrets manager`);
@@ -57,7 +62,7 @@ async function handler(): Promise<void> {
   }
   validateAddress(QA_ADDRESS);
 
-  const {name, key} = await getAuthKey();
+  const { name, key } = await getAuthKey();
 
   const argv = await parser.argv;
 
