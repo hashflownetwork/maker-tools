@@ -8,10 +8,10 @@ export function toPriceLevelsBN(
 ): PriceLevelBN[] {
   const invert = options?.invert ?? false;
   return priceLevels.map(l => {
-    const price = new BigNumber(l.price);
+    const price = new BigNumber(l.p);
     return {
-      level: new BigNumber(l.level),
-      price: invert ? new BigNumber(1).dividedBy(price) : price,
+      q: new BigNumber(l.q),
+      p: invert ? new BigNumber(1).dividedBy(price) : price,
     };
   });
 }
@@ -36,8 +36,8 @@ export function computeLevelsQuote(
   }
 
   const quote = {
-    baseAmount: levels[0]!.level,
-    quoteAmount: levels[0]!.level.multipliedBy(levels[0]!.price),
+    baseAmount: levels[0]!.q,
+    quoteAmount: levels[0]!.q.multipliedBy(levels[0]!.p),
   };
   if (
     (reqBaseAmount && reqBaseAmount.lt(quote.baseAmount)) ||
@@ -48,25 +48,25 @@ export function computeLevelsQuote(
 
   for (let i = 1; i < levels.length; i++) {
     const nextLevel = levels[i]!;
-    const nextLevelDepth = nextLevel.level.minus(levels[i - 1]!.level);
+    const nextLevelBase = quote.baseAmount.plus(nextLevel.q);
     const nextLevelQuote = quote.quoteAmount.plus(
-      nextLevelDepth.multipliedBy(nextLevel.price)
+      nextLevel.q.multipliedBy(nextLevel.p)
     );
-    if (reqBaseAmount && reqBaseAmount.lte(nextLevel.level)) {
+    if (reqBaseAmount && reqBaseAmount.lte(nextLevelBase)) {
       const baseDifference = reqBaseAmount.minus(quote.baseAmount);
       const quoteAmount = quote.quoteAmount.plus(
-        baseDifference.multipliedBy(nextLevel.price)
+        baseDifference.multipliedBy(nextLevel.p)
       );
       return { amount: quoteAmount };
     } else if (reqQuoteAmount && reqQuoteAmount.lte(nextLevelQuote)) {
       const quoteDifference = reqQuoteAmount.minus(quote.quoteAmount);
       const baseAmount = quote.baseAmount.plus(
-        quoteDifference.dividedBy(nextLevel.price)
+        quoteDifference.dividedBy(nextLevel.p)
       );
       return { amount: baseAmount };
     }
 
-    quote.baseAmount = nextLevel.level;
+    quote.baseAmount = nextLevelBase;
     quote.quoteAmount = nextLevelQuote;
   }
 
