@@ -1,5 +1,10 @@
-import { Chain, ChainId, ChainType, HashflowApi } from '@hashflow/taker-js';
-import { validateChain } from '@hashflow/taker-js';
+import {
+  Chain,
+  ChainId,
+  ChainType,
+  HashflowApi,
+  validateChain,
+} from '@hashflow/taker-js';
 import { PriceLevel } from '@hashflow/taker-js/dist/types/common';
 import BigNumber from 'bignumber.js';
 import { getSecretValue } from 'helpers/secrets';
@@ -241,7 +246,7 @@ async function handler(): Promise<void> {
           ...results.map(r => r.quoteAmount?.toFormat(maxQuoteDp).length ?? 0)
         );
         const maxFeesDigits = Math.max(
-          ...results.map(r => r.feeBps?.toString().length ?? 0)
+          ...results.map(r => r.feesBps?.toString().length ?? 0)
         );
         const padDevDegits = Math.max(
           ...results.map(
@@ -300,7 +305,7 @@ async function handler(): Promise<void> {
             padDevDegits,
             ' '
           )} bps`;
-          const feesStr = `fees: ${r?.feeBps
+          const feesStr = `fees: ${r?.feesBps
             ?.toString()
             .padStart(maxFeesDigits, ' ')} bps`;
           const failStr = r?.failMsg ? `failed! ${r.failMsg}` : '';
@@ -350,7 +355,7 @@ async function testRfqs(
     quoteAmount?: BigNumber;
     expectedAmount?: BigNumber;
     deviationBps?: BigNumber;
-    feeBps?: number;
+    feesBps?: number;
     failMsg?: string;
     rfqIds?: string[];
   }[];
@@ -380,7 +385,7 @@ async function testRfqs(
     quoteAmount?: BigNumber;
     expectedAmount?: BigNumber;
     deviationBps?: BigNumber;
-    feeBps?: number;
+    feesBps?: number;
     failMsg?: string;
     rfqIds?: string[];
   }> => {
@@ -414,9 +419,9 @@ async function testRfqs(
           };
 
     // Pick random int fee between 0 and 10 bps (incl)
-    const feeBps = Math.round(Math.random() * 10);
+    const feesBps = Math.round(Math.random() * 10);
     const feeFactor = new BigNumber(1).minus(
-      new BigNumber(feeBps).dividedBy(10_000)
+      new BigNumber(feesBps).dividedBy(10_000)
     );
 
     try {
@@ -431,7 +436,7 @@ async function testRfqs(
           quoteTokenAmount,
           wallet,
           marketMakers: [maker],
-          feeBps,
+          feesBps: feesBps,
           debug: true,
         }),
       ]);
@@ -447,7 +452,7 @@ async function testRfqs(
           provided,
           baseAmount,
           quoteAmount,
-          feeBps,
+          feesBps,
           failMsg: `No levels for ${maker}. Received: ${JSON.stringify(
             levelsMap
           )}`,
@@ -456,14 +461,16 @@ async function testRfqs(
 
       /* Compute expected amounts (including fees) */
       const expectedToken = provided === 'base' ? quoteToken : baseToken;
+      const expectedAmountAmountRaw =
+        provided === 'base'
+          ? extractExpectedAmount(levels, baseAmount, undefined)
+          : extractExpectedAmount(levels, undefined, quoteAmount);
+
       const expectedAmount =
         provided === 'base'
-          ? extractExpectedAmount(levels, baseAmount, undefined)?.multipliedBy(
-              feeFactor
-            )
-          : extractExpectedAmount(levels, undefined, quoteAmount)?.dividedBy(
-              feeFactor
-            );
+          ? expectedAmountAmountRaw?.multipliedBy(feeFactor)
+          : expectedAmountAmountRaw?.dividedBy(feeFactor);
+
       if (!expectedAmount) {
         return {
           provided,
@@ -488,7 +495,7 @@ async function testRfqs(
           baseAmount,
           quoteAmount,
           expectedAmount,
-          feeBps,
+          feesBps,
           rfqIds: rfq.internalRfqIds ?? [],
           failMsg: `No quote data. Received error: ${JSON.stringify(
             rfq.error
@@ -528,7 +535,7 @@ async function testRfqs(
         quoteAmount: provided === 'quote' ? quoteAmount : receivedAmount,
         expectedAmount,
         deviationBps,
-        feeBps,
+        feesBps,
         rfqIds: rfq.internalRfqIds ?? [],
       };
     } catch (err) {
