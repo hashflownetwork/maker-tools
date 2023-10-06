@@ -536,7 +536,7 @@ async function testRfqs(
         expectedAmount,
         deviationBps,
         feesBps,
-        rfqIds: rfq.internalRfqIds ?? [],
+        rfqIds: [rfq.rfqId] ?? [],
       };
     } catch (err) {
       return {
