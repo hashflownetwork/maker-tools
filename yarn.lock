@@ -922,10 +922,10 @@
     "@hashflow/hashverse-contracts-evm" "1.0.0"
     "@hashflow/protocol" "1.0.3"
 
-"@hashflow/taker-js@0.3.3":
-  version "0.3.3"
-  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.3.3.tgz#ade5ad09d17427b6ee60ed2b5dda105371998334"
-  integrity sha512-h4gxOznAUkUD3aSsV0yBR5qX/BItND99Gr8iZhs98SSj+Jn5gt5f5/Ve2L9gRrQnuJn0OVylkoAHtPtUG7IQ8w==
+"@hashflow/taker-js@0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.3.4.tgz#254a3ca5e14bce00c920ffe4cdb3f743020c6b8f"
+  integrity sha512-/lJmW/gZndUZNyBv1sZR/g+H8VqsZDOQ4QsbUL93RrBeAHBd00nLXyr2Wgg5FlpZzTyMz8ea5+3BDB6K/0Xi2w==
   dependencies:
     "@hashflow/sdk" "^2.2.0"
     axios "^0.27.2"
