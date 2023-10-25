@@ -59,7 +59,7 @@ async function getAuthKey(): Promise<{ name: string; key: string }> {
 }
 
 async function handler(): Promise<void> {
-  const QA_ADDRESS = process.env.QA_TAKER_ADDRESS;
+  const QA_ADDRESS = process.env.QA_TAKER_ADDRESS?.toLowerCase();
   if (!QA_ADDRESS) {
     throw new Error(
       `Please specify the taker address you want to use for QA in src/.env under QA_ADDRESS`
@@ -211,7 +211,6 @@ async function handler(): Promise<void> {
         totalSuccessRate += successRate;
         totalAttempts += 1;
 
-
         const levels = entry.levels;
         const minLevel = new BigNumber(levels[0]?.q ?? '0')
           .precision(7)
@@ -338,7 +337,7 @@ async function handler(): Promise<void> {
       }
     }
   }
-  const totalSR = totalSuccessRate/totalAttempts;
+  const totalSR = totalSuccessRate / totalAttempts;
   const totalSuccessRateStr = `${(100 * totalSR).toFixed(2)}%`;
   process.stdout.write(`Total Success Rate: ${totalSuccessRateStr}\n`);
   process.stdout.write('QA test completed.\n');
