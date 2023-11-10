@@ -14,7 +14,6 @@ import { computeLevelsQuote } from '../helpers/levels';
 import { convertFromDecimals, convertToDecimals } from '../helpers/token';
 import { Environment, Token } from '../helpers/types';
 import {
-  validateAddress,
   validateEnvironment,
   validateMakerName,
 } from '../helpers/validation';
@@ -59,14 +58,6 @@ async function getAuthKey(): Promise<{ name: string; key: string }> {
 }
 
 async function handler(): Promise<void> {
-  const QA_ADDRESS = process.env.QA_TAKER_ADDRESS?.toLowerCase();
-  if (!QA_ADDRESS) {
-    throw new Error(
-      `Please specify the taker address you want to use for QA in src/.env under QA_ADDRESS`
-    );
-  }
-  validateAddress(QA_ADDRESS);
-
   const { name, key } = await getAuthKey();
 
   const argv = await parser.argv;
