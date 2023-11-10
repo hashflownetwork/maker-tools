@@ -1,23 +1,14 @@
-import {
-  Chain,
-  ChainId,
-  ChainType,
-  HashflowApi,
-  validateChain,
-} from '@hashflow/taker-js';
-import { PriceLevel } from '@hashflow/taker-js/dist/types/common';
+import {Chain, ChainId, ChainType, HashflowApi, validateChain,} from '@hashflow/taker-js';
+import {PriceLevel} from '@hashflow/taker-js/dist/types/common';
 import BigNumber from 'bignumber.js';
-import { getSecretValue } from 'helpers/secrets';
+import {getSecretValue} from 'helpers/secrets';
 import yargs from 'yargs/yargs';
 
-import { computeLevelsQuote } from '../helpers/levels';
-import { convertFromDecimals, convertToDecimals } from '../helpers/token';
-import { Environment, Token } from '../helpers/types';
-import {
-  validateAddress,
-  validateEnvironment,
-  validateMakerName,
-} from '../helpers/validation';
+import {validateEvmAddress, validateSolanaAddress} from '../../../taker-js/src/helpers/validation';
+import {computeLevelsQuote} from '../helpers/levels';
+import {convertFromDecimals, convertToDecimals} from '../helpers/token';
+import {Environment, Token} from '../helpers/types';
+import {validateEnvironment, validateMakerName,} from '../helpers/validation';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
@@ -57,15 +48,8 @@ async function getAuthKey(): Promise<{ name: string; key: string }> {
     return { name, key };
   }
 }
-
 async function handler(): Promise<void> {
-  const QA_ADDRESS = process.env.QA_TAKER_ADDRESS?.toLowerCase();
-  if (!QA_ADDRESS) {
-    throw new Error(
-      `Please specify the taker address you want to use for QA in src/.env under QA_ADDRESS`
-    );
-  }
-  validateAddress(QA_ADDRESS);
+
 
   const { name, key } = await getAuthKey();
 
@@ -79,6 +63,22 @@ async function handler(): Promise<void> {
   validateMakerName(maker);
   validateChain(chain);
   validateEnvironment(env);
+
+
+  const evmQaAddress = process.env.QA_TAKER_ADDRESS?.toLowerCase();
+  if (!evmQaAddress) {
+    throw new Error(
+        `Please specify the taker address you want to use for QA in src/.env under QA_TAKER_ADDRESS`
+    );
+  }
+  validateEvmAddress(evmQaAddress);
+  const solanaQaAddress = process.env.SOLANA_QA_TAKER_ADDRESS;
+  if (!solanaQaAddress) {
+    throw new Error(
+        `Please specify the taker address you want to use for QA in src/.env under SOLANA_QA_TAKER_ADDRESS`
+    );
+  }
+  validateSolanaAddress(solanaQaAddress);
 
   const hashflow = new HashflowApi('taker', name, key, env);
 
@@ -201,7 +201,8 @@ async function handler(): Promise<void> {
       try {
         const { successRate, biasBps, deviationBps, results } = await testRfqs(
           hashflow,
-          QA_ADDRESS,
+          evmQaAddress,
+          solanaQaAddress,
           numRequests,
           delayMs,
           maker,
@@ -346,7 +347,8 @@ async function handler(): Promise<void> {
 
 async function testRfqs(
   hashflow: HashflowApi,
-  wallet: string,
+  evmWallet: string,
+  solanaWallet: string,
   numRequests: number,
   delayMs: number,
   maker: string,
@@ -432,16 +434,24 @@ async function testRfqs(
     );
 
     try {
+      const walletForQuoteToken = (quoteToken: Token) => {
+        switch (quoteToken.chain.chainType) {
+          case 'evm': return evmWallet;
+          case 'solana': return solanaWallet;
+        }
+      }
+
       /* Request fresh levels and RFQ */
       const [levelsMap, rfq] = await Promise.all([
         hashflow.getPriceLevels(chain, [maker]),
         hashflow.requestQuote({
-          baseChain: chain, // TODO(ENG-2177): support specifying quoteChain as well
+          baseChain: chain,
+          quoteChain: quoteToken.chain,
           baseToken: baseToken.address,
           quoteToken: quoteToken.address,
           baseTokenAmount,
           quoteTokenAmount,
-          wallet,
+          wallet: walletForQuoteToken(quoteToken),
           marketMakers: [maker],
           feesBps: feesBps,
           debug: true,

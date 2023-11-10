@@ -14,8 +14,3 @@ export function validateEnvironment(env: Environment): void {
   }
 }
 
-export function validateAddress(address: string): void {
-  if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    throw new Error(`Invalid EVM address: ${address}`);
-  }
-}

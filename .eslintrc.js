@@ -55,7 +55,6 @@ module.exports = {
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/no-parameter-properties': 'off',
     '@typescript-eslint/no-this-alias': 'error',
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-use-before-declare': 'off',
     '@typescript-eslint/no-var-requires': 'error',
     '@typescript-eslint/prefer-for-of': 'error',
