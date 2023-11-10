@@ -1,6 +1,5 @@
 import {Chain, ChainId, ChainType, HashflowApi, validateChain,} from '@hashflow/taker-js';
 import {PriceLevel} from '@hashflow/taker-js/dist/types/common';
-import {validateEvmAddress, validateSolanaAddress} from '@hashflow/taker-js/dist/validation';
 import BigNumber from 'bignumber.js';
 import {computeLevelsQuote} from 'helpers/levels';
 import {getSecretValue} from 'helpers/secrets';
@@ -8,6 +7,7 @@ import {convertFromDecimals, convertToDecimals} from 'helpers/token';
 import {Environment, Token} from 'helpers/types';
 import {validateEnvironment, validateMakerName,} from 'helpers/validation';
 import yargs from 'yargs/yargs';
+import {validateEvmAddress, validateSolanaAddress} from '../../../taker-js/src/helpers/validation';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
