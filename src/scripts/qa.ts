@@ -5,7 +5,7 @@ import BigNumber from 'bignumber.js';
 import {computeLevelsQuote} from 'helpers/levels';
 import {getSecretValue} from 'helpers/secrets';
 import {convertFromDecimals, convertToDecimals} from 'helpers/token';
-import {Environment, Token} from 'helpers/types';
+import {Environment, PriceLevel, Token} from 'helpers/types';
 import {validateEnvironment, validateMakerName} from 'helpers/validation';
 import yargs from 'yargs/yargs';
 
@@ -113,7 +113,7 @@ async function handler(): Promise<void> {
     {
       baseToken: Token;
       quoteToken: Token;
-      levels: common.PriceLevel[];
+      levels: PriceLevel[];
     }[]
   > = {};
   process.stdout.write(`Fetching levels for ${makersString} ... `);
@@ -368,7 +368,7 @@ async function testRfqs(
   delayMs: number,
   maker: string,
   chain: Chain,
-  entry: { baseToken: Token; quoteToken: Token; levels: common.PriceLevel[] }
+  entry: { baseToken: Token; quoteToken: Token; levels: PriceLevel[] }
 ): Promise<{
   successRate: number;
   biasBps: number;

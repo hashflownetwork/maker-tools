@@ -16,7 +16,7 @@
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.418.0",
     "@hashflow/sdk": "^1.2.4",
-    "@hashflow/taker-js": "0.3.5",
+    "@hashflow/taker-js": "^0.3.5",
     "bignumber.js": "^9.1.1",
     "ethers": "6.7.0",
     "yargs": "^17.6.2"
