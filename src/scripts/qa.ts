@@ -9,7 +9,6 @@ import {
   validateEvmAddress,
   validateSolanaAddress,
 } from '@hashflow/taker-js/dist/helpers/validation';
-import * as common from '@hashflow/taker-js/dist/types/common';
 import BigNumber from 'bignumber.js';
 import { computeLevelsQuote } from 'helpers/levels';
 import { getSecretValue } from 'helpers/secrets';
@@ -608,7 +607,7 @@ async function testRfqs(
 }
 
 function extractExpectedAmount(
-  levels: common.PriceLevel[],
+  levels: PriceLevel[],
   baseAmount: BigNumber | undefined,
   quoteAmount: BigNumber | undefined
 ): BigNumber | undefined {
