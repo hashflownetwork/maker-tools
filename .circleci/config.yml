@@ -1,0 +1,34 @@
+version: 2.1
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:18.18
+
+jobs:
+  lint-and-test:
+    executor: node-executor
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Package Cache
+          keys:
+            - node-modules-cache-{{ checksum "yarn.lock" }}
+      - run:
+          name: Install Dependencies
+          command: yarn install
+      - save_cache:
+          name: Save Node Modules Cache
+          key: node-modules-cache-{{ checksum "yarn.lock" }}
+          paths:
+            - node_modules
+      - run:
+          name: Lint
+          command: yarn eslint
+      - run:
+          name: TSC
+          command: yarn tsc
+
+workflows:
+  test:
+    jobs:
+      - lint-and-test

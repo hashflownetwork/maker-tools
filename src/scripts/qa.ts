@@ -5,19 +5,17 @@ import {
   HashflowApi,
   validateChain,
 } from '@hashflow/taker-js';
-import { PriceLevel } from '@hashflow/taker-js/dist/types/common';
-import BigNumber from 'bignumber.js';
-import { getSecretValue } from 'helpers/secrets';
-import yargs from 'yargs/yargs';
-
-import { computeLevelsQuote } from '../helpers/levels';
-import { convertFromDecimals, convertToDecimals } from '../helpers/token';
-import { Environment, Token } from '../helpers/types';
 import {
-  validateAddress,
-  validateEnvironment,
-  validateMakerName,
-} from '../helpers/validation';
+  validateEvmAddress,
+  validateSolanaAddress,
+} from '@hashflow/taker-js/dist/helpers/validation';
+import BigNumber from 'bignumber.js';
+import { computeLevelsQuote } from 'helpers/levels';
+import { getSecretValue } from 'helpers/secrets';
+import { convertFromDecimals, convertToDecimals } from 'helpers/token';
+import { Environment, PriceLevel, Token } from 'helpers/types';
+import { validateEnvironment, validateMakerName } from 'helpers/validation';
+import yargs from 'yargs/yargs';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
@@ -57,16 +55,7 @@ async function getAuthKey(): Promise<{ name: string; key: string }> {
     return { name, key };
   }
 }
-
 async function handler(): Promise<void> {
-  const QA_ADDRESS = process.env.QA_TAKER_ADDRESS?.toLowerCase();
-  if (!QA_ADDRESS) {
-    throw new Error(
-      `Please specify the taker address you want to use for QA in src/.env under QA_ADDRESS`
-    );
-  }
-  validateAddress(QA_ADDRESS);
-
   const { name, key } = await getAuthKey();
 
   const argv = await parser.argv;
@@ -79,6 +68,15 @@ async function handler(): Promise<void> {
   validateMakerName(maker);
   validateChain(chain);
   validateEnvironment(env);
+
+  const evmQaAddress = process.env.QA_TAKER_ADDRESS?.toLowerCase();
+  if (evmQaAddress) {
+    validateEvmAddress(evmQaAddress);
+  }
+  const solanaQaAddress = process.env.QA_TAKER_ADDRESS_SOLANA;
+  if (solanaQaAddress) {
+    validateSolanaAddress(solanaQaAddress);
+  }
 
   const hashflow = new HashflowApi('taker', name, key, env);
 
@@ -198,142 +196,173 @@ async function handler(): Promise<void> {
       const pairStr = `${entry.baseToken.name}-${entry.quoteToken.name}`;
       process.stdout.write(`Requesting RFQs for ${maker}: ${pairStr} ... `);
 
-      try {
-        const { successRate, biasBps, deviationBps, results } = await testRfqs(
-          hashflow,
-          QA_ADDRESS,
-          numRequests,
-          delayMs,
-          maker,
-          chain,
-          entry
-        );
-        totalSuccessRate += successRate;
-        totalAttempts += 1;
-
-        const levels = entry.levels;
-        const minLevel = new BigNumber(levels[0]?.q ?? '0')
-          .precision(7)
-          .toFormat();
-        const maxLevel = new BigNumber(levels[levels.length - 1]?.q ?? '0')
-          .precision(7)
-          .toFormat();
-
-        const successRateStr = `${(100 * successRate).toFixed(2)}%`;
-        const biasStr = `${biasBps > 0 ? '+' : ''}${new BigNumber(biasBps)
-          .precision(4)
-          .toFixed()} bps`;
-        const stdDevStr = `${new BigNumber(deviationBps)
-          .precision(4)
-          .toFixed()} bps`;
-
-        process.stdout.write('done\n');
-        console.log(
-          `\nSuccess rate: ${successRateStr}  Avg bias: ${biasStr}  Std deviation: ${stdDevStr}`
-        );
-        console.log(
-          `Min level: ${minLevel} ${entry.baseToken.name}  Max level: ${maxLevel} ${entry.baseToken.name}`
-        );
-
-        console.log(`\n[P] = Provided in RFQ   [M] = Received from Maker`);
-
-        const maxBaseDp = Math.max(
-          ...results.map(r => r.baseAmount?.precision(7).dp() ?? 0)
-        );
-        const maxQuoteDp = Math.max(
-          ...results.map(r => r.quoteAmount?.precision(7).dp() ?? 0)
-        );
-
-        const maxBaseDigits = Math.max(
-          ...results.map(r => r.baseAmount?.toFormat(maxBaseDp).length ?? 0)
-        );
-        const maxQuoteDigits = Math.max(
-          ...results.map(r => r.quoteAmount?.toFormat(maxQuoteDp).length ?? 0)
-        );
-        const maxFeesDigits = Math.max(
-          ...results.map(r => r.feesBps?.toString().length ?? 0)
-        );
-        const padDevDegits = Math.max(
-          ...results.map(
-            r =>
-              `${r?.deviationBps?.gt(0) ? '+' : ''}${r?.deviationBps
-                ?.precision(3)
-                .toFixed()}`.length
-          )
-        );
-        const maxExpectedDigits = Math.max(maxBaseDigits, maxQuoteDigits);
-        const maxRfqIdLength = Math.max(
-          ...results.map(r =>
-            r.rfqIds?.length ? JSON.stringify(r.rfqIds).length : 0
-          )
-        );
-
-        for (let i = 0; i < results.length; i++) {
-          const r = results[i];
-
-          const { baseAmountStr, quoteAmountStr } =
-            r?.provided === 'base'
-              ? {
-                  baseAmountStr: `[P] base: ${r?.baseAmount
-                    ?.toFormat(maxBaseDp)
-                    .padStart(maxBaseDigits, ' ')} ${entry.baseToken.name}`,
-                  quoteAmountStr: `[M] quote: ${r?.quoteAmount
-                    ?.toFormat(maxQuoteDp)
-                    .padStart(maxQuoteDigits, ' ')} ${entry.quoteToken.name}`,
-                }
-              : {
-                  baseAmountStr: `[M] base: ${r?.baseAmount
-                    ?.toFormat(maxBaseDp)
-                    .padStart(maxBaseDigits, ' ')} ${entry.baseToken.name}`,
-                  quoteAmountStr: `[P] quote: ${r?.quoteAmount
-                    ?.toFormat(maxQuoteDp)
-                    .padStart(maxQuoteDigits, ' ')} ${entry.quoteToken.name}`,
-                };
-
-          const { t: tokenExp, dp: maxExpDp } =
-            r?.provided === 'base'
-              ? { t: entry.quoteToken.name, dp: maxQuoteDp }
-              : { t: entry.baseToken.name, dp: maxBaseDp };
-
-          const expectedAmountStr = `expected: ${r?.expectedAmount
-            ?.toFormat(maxExpDp)
-            ?.padStart(maxExpectedDigits, ' ')} ${tokenExp.padEnd(
-            Math.max(entry.baseToken.name.length, entry.quoteToken.name.length),
-            ' '
-          )}`;
-
-          const devSign = r?.deviationBps?.gt(0) ? '+' : '';
-          const deviation = `${devSign}${r?.deviationBps
-            ?.precision(3)
-            .toFixed()}`;
-          const deviationStr = `diff: ${deviation.padStart(
-            padDevDegits,
-            ' '
-          )} bps`;
-          const feesStr = `fees: ${r?.feesBps
-            ?.toString()
-            .padStart(maxFeesDigits, ' ')} bps`;
-          const failStr = r?.failMsg ? `failed! ${r.failMsg}` : '';
-
-          const indexStr = i.toString().padStart(2, '0');
-          const rfqIdStr = r?.rfqIds?.length
-            ? JSON.stringify(r.rfqIds)
-            : '[--]';
-
-          console.log(
-            `[${indexStr}] ${rfqIdStr.padEnd(
-              maxRfqIdLength,
-              ' '
-            )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}`
+      const walletForQuoteToken = (quoteToken: Token) => {
+        if (quoteToken.chain.chainType === 'evm') {
+          if (evmQaAddress === undefined) {
+            process.stdout.write(
+              `Unable to request quotes for ${pairStr}. Must specify a QA_TAKER_ADDRESS environment variable.`
+            );
+          }
+          return evmQaAddress;
+        } else if (quoteToken.chain.chainType === 'solana') {
+          if (solanaQaAddress === undefined) {
+            process.stdout.write(
+              `Unable to request quotes for ${pairStr}. Must specify a QA_TAKER_ADDRESS_SOLANA environment variable.`
+            );
+          }
+          return solanaQaAddress;
+        } else {
+          process.stdout.write(
+            `Unable to request quotes for ${pairStr}. ${quoteToken.chain.chainType} unsupported.`
           );
+          return undefined;
         }
+      };
 
-        console.log('\n');
-      } catch (err) {
-        process.stdout.write(
-          `failed!  ${(err as Error).toString()}. ${JSON.stringify(entry)}\n`
-        );
-        process.exit(0);
+      const wallet = walletForQuoteToken(entry.quoteToken);
+
+      if (wallet !== undefined) {
+        try {
+          const { successRate, biasBps, deviationBps, results } =
+            await testRfqs(
+              hashflow,
+              wallet,
+              numRequests,
+              delayMs,
+              maker,
+              chain,
+              entry
+            );
+          totalSuccessRate += successRate;
+          totalAttempts += 1;
+
+          const levels = entry.levels;
+          const minLevel = new BigNumber(levels[0]?.q ?? '0')
+            .precision(7)
+            .toFormat();
+          const maxLevel = new BigNumber(levels[levels.length - 1]?.q ?? '0')
+            .precision(7)
+            .toFormat();
+
+          const successRateStr = `${(100 * successRate).toFixed(2)}%`;
+          const biasStr = `${biasBps > 0 ? '+' : ''}${new BigNumber(biasBps)
+            .precision(4)
+            .toFixed()} bps`;
+          const stdDevStr = `${new BigNumber(deviationBps)
+            .precision(4)
+            .toFixed()} bps`;
+
+          process.stdout.write('done\n');
+          console.log(
+            `\nSuccess rate: ${successRateStr}  Avg bias: ${biasStr}  Std deviation: ${stdDevStr}`
+          );
+          console.log(
+            `Min level: ${minLevel} ${entry.baseToken.name}  Max level: ${maxLevel} ${entry.baseToken.name}`
+          );
+
+          console.log(`\n[P] = Provided in RFQ   [M] = Received from Maker`);
+
+          const maxBaseDp = Math.max(
+            ...results.map(r => r.baseAmount?.precision(7).dp() ?? 0)
+          );
+          const maxQuoteDp = Math.max(
+            ...results.map(r => r.quoteAmount?.precision(7).dp() ?? 0)
+          );
+
+          const maxBaseDigits = Math.max(
+            ...results.map(r => r.baseAmount?.toFormat(maxBaseDp).length ?? 0)
+          );
+          const maxQuoteDigits = Math.max(
+            ...results.map(r => r.quoteAmount?.toFormat(maxQuoteDp).length ?? 0)
+          );
+          const maxFeesDigits = Math.max(
+            ...results.map(r => r.feesBps?.toString().length ?? 0)
+          );
+          const padDevDegits = Math.max(
+            ...results.map(
+              r =>
+                `${r?.deviationBps?.gt(0) ? '+' : ''}${r?.deviationBps
+                  ?.precision(3)
+                  .toFixed()}`.length
+            )
+          );
+          const maxExpectedDigits = Math.max(maxBaseDigits, maxQuoteDigits);
+          const maxRfqIdLength = Math.max(
+            ...results.map(r =>
+              r.rfqIds?.length ? JSON.stringify(r.rfqIds).length : 0
+            )
+          );
+
+          for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+
+            const { baseAmountStr, quoteAmountStr } =
+              r?.provided === 'base'
+                ? {
+                    baseAmountStr: `[P] base: ${r?.baseAmount
+                      ?.toFormat(maxBaseDp)
+                      .padStart(maxBaseDigits, ' ')} ${entry.baseToken.name}`,
+                    quoteAmountStr: `[M] quote: ${r?.quoteAmount
+                      ?.toFormat(maxQuoteDp)
+                      .padStart(maxQuoteDigits, ' ')} ${entry.quoteToken.name}`,
+                  }
+                : {
+                    baseAmountStr: `[M] base: ${r?.baseAmount
+                      ?.toFormat(maxBaseDp)
+                      .padStart(maxBaseDigits, ' ')} ${entry.baseToken.name}`,
+                    quoteAmountStr: `[P] quote: ${r?.quoteAmount
+                      ?.toFormat(maxQuoteDp)
+                      .padStart(maxQuoteDigits, ' ')} ${entry.quoteToken.name}`,
+                  };
+
+            const { t: tokenExp, dp: maxExpDp } =
+              r?.provided === 'base'
+                ? { t: entry.quoteToken.name, dp: maxQuoteDp }
+                : { t: entry.baseToken.name, dp: maxBaseDp };
+
+            const expectedAmountStr = `expected: ${r?.expectedAmount
+              ?.toFormat(maxExpDp)
+              ?.padStart(maxExpectedDigits, ' ')} ${tokenExp.padEnd(
+              Math.max(
+                entry.baseToken.name.length,
+                entry.quoteToken.name.length
+              ),
+              ' '
+            )}`;
+
+            const devSign = r?.deviationBps?.gt(0) ? '+' : '';
+            const deviation = `${devSign}${r?.deviationBps
+              ?.precision(3)
+              .toFixed()}`;
+            const deviationStr = `diff: ${deviation.padStart(
+              padDevDegits,
+              ' '
+            )} bps`;
+            const feesStr = `fees: ${r?.feesBps
+              ?.toString()
+              .padStart(maxFeesDigits, ' ')} bps`;
+            const failStr = r?.failMsg ? `failed! ${r.failMsg}` : '';
+
+            const indexStr = i.toString().padStart(2, '0');
+            const rfqIdStr = r?.rfqIds?.length
+              ? JSON.stringify(r.rfqIds)
+              : '[--]';
+
+            console.log(
+              `[${indexStr}] ${rfqIdStr.padEnd(
+                maxRfqIdLength,
+                ' '
+              )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}`
+            );
+          }
+
+          console.log('\n');
+        } catch (err) {
+          process.stdout.write(
+            `failed!  ${(err as Error).toString()}. ${JSON.stringify(entry)}\n`
+          );
+          process.exit(0);
+        }
       }
     }
   }
@@ -436,12 +465,13 @@ async function testRfqs(
       const [levelsMap, rfq] = await Promise.all([
         hashflow.getPriceLevels(chain, [maker]),
         hashflow.requestQuote({
-          baseChain: chain, // TODO(ENG-2177): support specifying quoteChain as well
+          baseChain: chain,
+          quoteChain: quoteToken.chain,
           baseToken: baseToken.address,
           quoteToken: quoteToken.address,
           baseTokenAmount,
           quoteTokenAmount,
-          wallet,
+          wallet: wallet,
           marketMakers: [maker],
           feesBps: feesBps,
           debug: true,
