@@ -3,7 +3,7 @@ import { Chain, ChainId, ChainType } from '@hashflow/taker-js';
 import BigNumber from 'bignumber.js';
 
 export const ENVIRONMENTS = ['development', 'production', 'staging'] as const;
-export type Environment = typeof ENVIRONMENTS[number];
+export type Environment = (typeof ENVIRONMENTS)[number];
 
 export type PriceLevel = {
   q: string;

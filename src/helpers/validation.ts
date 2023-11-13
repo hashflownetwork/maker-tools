@@ -13,4 +13,3 @@ export function validateEnvironment(env: Environment): void {
     throw new Error(`Unrecognized environment ${env}`);
   }
 }
-

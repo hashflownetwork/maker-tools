@@ -1,12 +1,21 @@
-import {Chain, ChainId, ChainType, HashflowApi, validateChain,} from '@hashflow/taker-js';
-import {validateEvmAddress, validateSolanaAddress} from "@hashflow/taker-js/dist/helpers/validation";
+import {
+  Chain,
+  ChainId,
+  ChainType,
+  HashflowApi,
+  validateChain,
+} from '@hashflow/taker-js';
+import {
+  validateEvmAddress,
+  validateSolanaAddress,
+} from '@hashflow/taker-js/dist/helpers/validation';
 import * as common from '@hashflow/taker-js/dist/types/common';
 import BigNumber from 'bignumber.js';
-import {computeLevelsQuote} from 'helpers/levels';
-import {getSecretValue} from 'helpers/secrets';
-import {convertFromDecimals, convertToDecimals} from 'helpers/token';
-import {Environment, PriceLevel, Token} from 'helpers/types';
-import {validateEnvironment, validateMakerName} from 'helpers/validation';
+import { computeLevelsQuote } from 'helpers/levels';
+import { getSecretValue } from 'helpers/secrets';
+import { convertFromDecimals, convertToDecimals } from 'helpers/token';
+import { Environment, PriceLevel, Token } from 'helpers/types';
+import { validateEnvironment, validateMakerName } from 'helpers/validation';
 import yargs from 'yargs/yargs';
 
 const parser = yargs(process.argv.slice(2)).options({
@@ -62,9 +71,13 @@ async function handler(): Promise<void> {
   validateEnvironment(env);
 
   const evmQaAddress = process.env.QA_TAKER_ADDRESS?.toLowerCase();
-  if (evmQaAddress) validateEvmAddress(evmQaAddress);
+  if (evmQaAddress) {
+    validateEvmAddress(evmQaAddress);
+  }
   const solanaQaAddress = process.env.QA_TAKER_ADDRESS_SOLANA;
-  if (solanaQaAddress) validateSolanaAddress(solanaQaAddress);
+  if (solanaQaAddress) {
+    validateSolanaAddress(solanaQaAddress);
+  }
 
   const hashflow = new HashflowApi('taker', name, key, env);
 
