@@ -14,10 +14,16 @@ To run this script, follow these steps:
 2. Navigate to `src/` and run `yarn`
 3. Copy `src/.env.example` to `src/.env` and set the environment variables:
     * ***`AUTH_KEY`***: Use your maker authorization key here. This is the same key you provide when connecting to our maker WebSocket.
-    * ***`QA_TAKER_ADDRESS`***: Put the EVM address of the wallet you want to use for testing. In the current iteration, no funds are transferred. This is just used to fill in the `trader` field in the RFQs you get.
+      * Wallets: In the current iteration, no funds are transferred. This is just used to fill in the `trader` field in the RFQs you get.
+        * ***`QA_TAKER_ADDRESS`***: Put the EVM address of the wallet you want to use for testing. 
+        * ***`QA_TAKER_ADDRESS_SOLANA`*** Put the Solana address of the wallet you want to use for testing. 
 4. Finally, run `yarn qa <options>` with the following options:
     * ***`--maker`***: your external maker name (e.g. `--maker=mm123`)
     * ***`--chain`***: chain id that you want to test (e.g. `--chain=137`)
+    * ***(Optional) `--chain_type`***: chain type to test (either `evm` or `solana`. Default: `evm`)
+    * ***(Optional) `--quote_chain`***: quote chain to test. If not set, we will use the base_chain.
+    * ***(Optional) `--quote_chain_type`***: quote chain type to test. If not set, we will use the base_chain_type.
+    * ***(Optional) `--check_all_xchain`***: if true, request quotes for all intra-chain and cross-chain quotes available for the provided base chain. (Default: `false`)
     * ***(Optional) `--base_token`***: base token name if you want to only test a specific pair (e.g. `--base_token=ETH`). If this is set, you also need to provide `--quote_token`. If this is not set, we'll test all pairs on the provided `chain`.
     * ***(Optional) `--quote_token`***: quote token name if you want to only test a specific pair (e.g. `--quote_token=ETH`). If this is set, you also need to provide `--base_token`. If this is not set, we'll test all pairs on the provided `chain`.
     * ***(Optional) `--env`***: Environment to test against. Default is `--env=staging`, the other option is `--env=production`. This will route your requests against `api-staging.hashflow.com` or `api.hashflow.com` respectively.
