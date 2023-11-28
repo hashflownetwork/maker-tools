@@ -20,7 +20,10 @@ import yargs from 'yargs/yargs';
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },
   chain: { number: true, demandOption: true },
-  chainType: { string: true, default: 'evm' },
+  chain_type: { string: true, default: 'evm' },
+  quote_chain: { number: true },
+  quote_chain_type: { string: true, default: 'evm' },
+  check_all_xchain: { boolean: true, default: false },
   base_token: { string: true, default: undefined },
   quote_token: { string: true, default: undefined },
   env: { string: true, default: 'staging' },
@@ -55,19 +58,51 @@ async function getAuthKey(): Promise<{ name: string; key: string }> {
     return { name, key };
   }
 }
+
+async function fetchQuoteChains(
+  hashflow: HashflowApi,
+  chain: Chain
+): Promise<Chain[]> {
+  process.stdout.write(`Fetching all available quote chains...`);
+  const tradingPairs = await hashflow.getTradingPairs(chain);
+  return tradingPairs.pairs.map(p => p.quoteToken.chain);
+}
+
+function stringifyChain(chain: Chain): string {
+  return `${chain.chainType}_${chain.chainId}`;
+}
+
 async function handler(): Promise<void> {
   const { name, key } = await getAuthKey();
 
   const argv = await parser.argv;
 
   const maker = argv.maker;
-  const chainType = argv.chainType as ChainType;
+  const chainType = argv.chain_type as ChainType;
   const chainId = argv.chain as ChainId;
   const chain: Chain = { chainType, chainId };
   const env = argv.env as Environment;
   validateMakerName(maker);
   validateChain(chain);
   validateEnvironment(env);
+
+  const crossChainCheck = argv.check_all_xchain;
+
+  if (crossChainCheck && argv.quote_chain) {
+    throw new Error(
+      `Can't specify a quote_chain and check_all_xchain simultaneously`
+    );
+  }
+
+  const maybeQuoteChain = argv.quote_chain
+    ? {
+        chainType: argv.quote_chain_type as ChainType,
+        chainId: argv.quote_chain as ChainId,
+      }
+    : undefined;
+  if (maybeQuoteChain) {
+    validateChain(maybeQuoteChain);
+  }
 
   const evmQaAddress = process.env.QA_TAKER_ADDRESS?.toLowerCase();
   if (evmQaAddress) {
@@ -128,65 +163,78 @@ async function handler(): Promise<void> {
       levels: PriceLevel[];
     }[]
   > = {};
-  process.stdout.write(`Fetching levels for ${makersString} ... `);
 
-  try {
-    const levels = await hashflow.getPriceLevels(chain, makers);
-    const retrievedMakers = Object.keys(levels);
-    if (!retrievedMakers.length) {
-      process.stdout.write(`failed!  No maker levels.\n`);
-      process.exit(0);
-    }
+  const quoteChains = maybeQuoteChain
+    ? [maybeQuoteChain]
+    : crossChainCheck
+      ? await fetchQuoteChains(hashflow, chain)
+      : [chain];
 
-    for (const retrievedMaker of retrievedMakers) {
-      const mPairs = levels[retrievedMaker];
-      if (!mPairs || !mPairs.length) {
-        process.stdout.write(`failed!  No levels for ${retrievedMaker}.\n`);
+  for (const quoteChain of quoteChains) {
+    process.stdout.write(
+      `Fetching levels for ${makersString} for quoteChain: ${stringifyChain(
+        quoteChain
+      )}... `
+    );
+
+    try {
+      const levels = await hashflow.getPriceLevels(chain, makers, quoteChain);
+      const retrievedMakers = Object.keys(levels);
+      if (!retrievedMakers.length) {
+        process.stdout.write(`failed!  No maker levels.\n`);
         process.exit(0);
       }
 
-      if (!makerLevels[retrievedMaker]) {
-        makerLevels[retrievedMaker] = [];
-      }
-      for (const entry of mPairs) {
-        const { pair, levels } = entry;
-        if (
-          pairProvided &&
-          !(
-            pair.baseTokenName === argv.base_token &&
-            pair.quoteTokenName === argv.quote_token
-          )
-        ) {
-          continue;
+      for (const retrievedMaker of retrievedMakers) {
+        const mPairs = levels[retrievedMaker];
+        if (!mPairs || !mPairs.length) {
+          process.stdout.write(`failed!  No levels for ${retrievedMaker}.\n`);
+          process.exit(0);
         }
 
-        if (!levels.length) {
-          process.stdout.write(
-            ` No levels for ${retrievedMaker} on ${entry.pair.baseTokenName}-${entry.pair.quoteTokenName}. Continuing with next pair...\n`
-          );
-          continue;
+        if (!makerLevels[retrievedMaker]) {
+          makerLevels[retrievedMaker] = [];
         }
+        for (const entry of mPairs) {
+          const { pair, levels } = entry;
+          if (
+            pairProvided &&
+            !(
+              pair.baseTokenName === argv.base_token &&
+              pair.quoteTokenName === argv.quote_token
+            )
+          ) {
+            continue;
+          }
 
-        const baseToken = {
-          chain,
-          address: entry.pair.baseToken,
-          name: entry.pair.baseTokenName,
-          decimals: entry.pair.baseTokenDecimals,
-        };
-        const quoteToken = {
-          chain,
-          address: entry.pair.quoteToken,
-          name: entry.pair.quoteTokenName,
-          decimals: entry.pair.quoteTokenDecimals,
-        };
-        makerLevels[retrievedMaker]!.push({ baseToken, quoteToken, levels });
+          if (!levels.length) {
+            process.stdout.write(
+              ` No levels for ${retrievedMaker} on ${entry.pair.baseTokenName}-${entry.pair.quoteTokenName}. Continuing with next pair...\n`
+            );
+            continue;
+          }
+
+          const baseToken = {
+            chain,
+            address: entry.pair.baseToken,
+            name: entry.pair.baseTokenName,
+            decimals: entry.pair.baseTokenDecimals,
+          };
+          const quoteToken = {
+            chain: quoteChain,
+            address: entry.pair.quoteToken,
+            name: entry.pair.quoteTokenName,
+            decimals: entry.pair.quoteTokenDecimals,
+          };
+          makerLevels[retrievedMaker]!.push({ baseToken, quoteToken, levels });
+        }
       }
+    } catch (err) {
+      process.stdout.write(`failed!  ${(err as Error).toString()}\n`);
+      process.exit(0);
     }
-  } catch (err) {
-    process.stdout.write(`failed!  ${(err as Error).toString()}\n`);
-    process.exit(0);
+    process.stdout.write('done\n');
   }
-  process.stdout.write('done\n');
 
   let totalSuccessRate = 0;
   let totalAttempts = 0;
@@ -463,7 +511,7 @@ async function testRfqs(
     try {
       /* Request fresh levels and RFQ */
       const [levelsMap, rfq] = await Promise.all([
-        hashflow.getPriceLevels(chain, [maker]),
+        hashflow.getPriceLevels(chain, [maker], quoteToken.chain),
         hashflow.requestQuote({
           baseChain: chain,
           quoteChain: quoteToken.chain,

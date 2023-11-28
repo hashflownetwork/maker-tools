@@ -929,10 +929,10 @@
     "@hashflow/hashverse-contracts-evm" "1.0.0"
     "@hashflow/protocol" "1.0.3"
 
-"@hashflow/taker-js@^0.3.5":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.3.5.tgz#69e3af6e0e4a9f429cf9877bbc5171a30d2b4e18"
-  integrity sha512-v1OpsNITaGUZyMcSPYu1P/06Ld7/yc9NeACxBiAn4NhdzJCGtO3a8APhIjUiNRcqeEITk2X/YWOt6VIRl0t6Wg==
+"@hashflow/taker-js@^0.3.6":
+  version "0.3.6"
+  resolved "https://registry.yarnpkg.com/@hashflow/taker-js/-/taker-js-0.3.6.tgz#17a30ab037d8ce327a4e4fea3604e3475dc48a21"
+  integrity sha512-qLvvjQMFAW7HyOldLpm5ixn+ND2e4comw1opUup4KnwDAXs5gJK6DDD8gCUn8hfLL/4JsB8vcikywKIVQ5U3qQ==
   dependencies:
     "@hashflow/sdk" "^2.2.0"
     "@solana/web3.js" "^1.87.5"
