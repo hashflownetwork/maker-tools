@@ -22,13 +22,13 @@ To run this script, follow these steps:
     * ***`--chain`***: chain id that you want to test (e.g. `--chain=137`)
     * ***(Optional) `--chain_type`***: chain type to test (either `evm` or `solana`. Default: `evm`)
     * ***(Optional) `--quote_chain`***: quote chain to test. If not set, we will use the base_chain.
-    * ***(Optional) `--quote_chain_type`***: quote chain type to test. If not set, we will use the base_chain_type.
+    * ***(Optional) `--quote_chain_type`***: quote chain type to test. (Default: 'evm')
     * ***(Optional) `--check_all_xchain`***: if true, request quotes for all intra-chain and cross-chain quotes available for the provided base chain. (Default: `false`)
     * ***(Optional) `--base_token`***: base token name if you want to only test a specific pair (e.g. `--base_token=ETH`). If this is set, you also need to provide `--quote_token`. If this is not set, we'll test all pairs on the provided `chain`.
     * ***(Optional) `--quote_token`***: quote token name if you want to only test a specific pair (e.g. `--quote_token=ETH`). If this is set, you also need to provide `--base_token`. If this is not set, we'll test all pairs on the provided `chain`.
     * ***(Optional) `--env`***: Environment to test against. Default is `--env=staging`, the other option is `--env=production`. This will route your requests against `api-staging.hashflow.com` or `api.hashflow.com` respectively.
     * ***(Optional) `--num_requests`***: Number of RFQs to send for each pair. Default is `--num_requests=30`.
-    * ***(Optional) `--delay-ms`***: Delay to introduce between each RFQ in milliseconds. This can be useful to test pricing skew over a longer period of time. Default is `--delay_ms=0`.
+    * ***(Optional) `--delay_ms`***: Delay to introduce between each RFQ in milliseconds. This can be useful to test pricing skew over a longer period of time. Default is `--delay_ms=0`.
     
 #### Interpreting the results
 When running the script, you're going to see output in the terminal that looks something like this (slightly edited version):
