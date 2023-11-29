@@ -491,15 +491,25 @@ async function testRfqs(
       return { provided, baseAmount, quoteAmount: undefined, failMsg };
     }
 
+    // When we convert these amounts to decimals, we might lose some precision at the end,
+    // past the number of specified decimals,
+    // in which case we might end up with an amount that is below the minimum amount,
+    // therefore we use ROUND_UP when calling toFixed.
     const { b: baseTokenAmount, q: quoteTokenAmount } =
       provided === 'base'
         ? {
-            b: convertToDecimals(baseAmount, baseToken).toFixed(0),
+            b: convertToDecimals(baseAmount, baseToken).toFixed(
+              0,
+              BigNumber.ROUND_UP
+            ),
             q: undefined,
           }
         : {
             b: undefined,
-            q: convertToDecimals(quoteAmount, quoteToken).toFixed(0),
+            q: convertToDecimals(quoteAmount, quoteToken).toFixed(
+              0,
+              BigNumber.ROUND_UP
+            ),
           };
 
     // Pick random int fee between 0 and 10 bps (incl)
