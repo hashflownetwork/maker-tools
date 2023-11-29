@@ -65,7 +65,16 @@ async function fetchQuoteChains(
 ): Promise<Chain[]> {
   process.stdout.write(`Fetching all available quote chains...`);
   const tradingPairs = await hashflow.getTradingPairs(chain);
-  return tradingPairs.pairs.map(p => p.quoteToken.chain);
+  const chains = tradingPairs.pairs.map(p => p.quoteToken.chain);
+  const seen: string[] = [];
+  const dedupChains: Chain[] = [];
+  chains.forEach(chain => {
+    if (!seen.includes(stringifyChain(chain))) {
+      dedupChains.push(chain);
+      seen.push(stringifyChain(chain));
+    }
+  });
+  return dedupChains;
 }
 
 function stringifyChain(chain: Chain): string {
@@ -174,7 +183,7 @@ async function handler(): Promise<void> {
     process.stdout.write(
       `Fetching levels for ${makersString} for quoteChain: ${stringifyChain(
         quoteChain
-      )}... `
+      )}...\n`
     );
 
     try {
@@ -241,8 +250,10 @@ async function handler(): Promise<void> {
 
   for (const maker of Object.keys(makerLevels)) {
     for (const entry of makerLevels[maker]!) {
-      const pairStr = `${entry.baseToken.name}-${entry.quoteToken.name}`;
-      process.stdout.write(`Requesting RFQs for ${maker}: ${pairStr} ... `);
+      const pairStr = `${entry.baseToken.name}:${stringifyChain(
+        entry.baseToken.chain
+      )}-${entry.quoteToken.name}:${stringifyChain(entry.quoteToken.chain)}`;
+      process.stdout.write(`Requesting RFQs for ${maker}: ${pairStr}... `);
 
       const walletForQuoteToken = (quoteToken: Token) => {
         if (quoteToken.chain.chainType === 'evm') {
