@@ -498,12 +498,18 @@ async function testRfqs(
     const { b: baseTokenAmount, q: quoteTokenAmount } =
       provided === 'base'
         ? {
-            b: convertToDecimals(baseAmount, baseToken).toFixed(0, BigNumber.ROUND_UP),
+            b: convertToDecimals(baseAmount, baseToken).toFixed(
+              0,
+              BigNumber.ROUND_UP
+            ),
             q: undefined,
           }
         : {
             b: undefined,
-            q: convertToDecimals(quoteAmount, quoteToken).toFixed(0, BigNumber.ROUND_UP),
+            q: convertToDecimals(quoteAmount, quoteToken).toFixed(
+              0,
+              BigNumber.ROUND_UP
+            ),
           };
 
     // Pick random int fee between 0 and 10 bps (incl)
