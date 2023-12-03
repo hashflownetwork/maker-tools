@@ -154,11 +154,11 @@ async function handler(): Promise<void> {
       process.stdout.write(
         `failed! No maker available ${JSON.stringify(chainMakers)}\n`
       );
-      process.exit(0);
+      process.exit(1);
     }
   } catch (err) {
     process.stdout.write(`failed!  ${(err as Error).toString()}\n`);
-    process.exit(0);
+    process.exit(1);
   }
 
   const makersString = makers.length > 1 ? JSON.stringify(makers) : makers[0];
@@ -191,14 +191,14 @@ async function handler(): Promise<void> {
       const retrievedMakers = Object.keys(levels);
       if (!retrievedMakers.length) {
         process.stdout.write(`failed!  No maker levels.\n`);
-        process.exit(0);
+        process.exit(1);
       }
 
       for (const retrievedMaker of retrievedMakers) {
         const mPairs = levels[retrievedMaker];
         if (!mPairs || !mPairs.length) {
           process.stdout.write(`failed!  No levels for ${retrievedMaker}.\n`);
-          process.exit(0);
+          process.exit(1);
         }
 
         if (!makerLevels[retrievedMaker]) {
@@ -240,7 +240,7 @@ async function handler(): Promise<void> {
       }
     } catch (err) {
       process.stdout.write(`failed!  ${(err as Error).toString()}\n`);
-      process.exit(0);
+      process.exit(1);
     }
     process.stdout.write('done\n');
   }
@@ -420,7 +420,7 @@ async function handler(): Promise<void> {
           process.stdout.write(
             `failed!  ${(err as Error).toString()}. ${JSON.stringify(entry)}\n`
           );
-          process.exit(0);
+          process.exit(1);
         }
       }
     }
