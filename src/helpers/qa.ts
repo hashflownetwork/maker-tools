@@ -1,10 +1,4 @@
-import {
-  Chain,
-  ChainId,
-  ChainType,
-  HashflowApi,
-  validateChain,
-} from '@hashflow/taker-js';
+import { Chain, HashflowApi, validateChain } from '@hashflow/taker-js';
 import {
   validateEvmAddress,
   validateSolanaAddress,
@@ -15,11 +9,14 @@ import { convertFromDecimals, convertToDecimals } from 'helpers/token';
 import { Environment, PriceLevel, Token } from 'helpers/types';
 import { validateEnvironment, validateMakerName } from 'helpers/validation';
 
+type LogFn = (message: string) => void;
+
 async function fetchQuoteChains(
   hashflow: HashflowApi,
-  chain: Chain
+  chain: Chain,
+  logFn: LogFn
 ): Promise<Chain[]> {
-  process.stdout.write(`Fetching all available quote chains...`);
+  logFn(`Fetching all available quote chains...`);
   const tradingPairs = await hashflow.getTradingPairs(chain);
   const chains = tradingPairs.pairs.map(p => p.quoteToken.chain);
   const seen: string[] = [];
@@ -37,79 +34,61 @@ function stringifyChain(chain: Chain): string {
   return `${chain.chainType}_${chain.chainId}`;
 }
 
-type QaOptions = {
-  maker: string;
-  chain: number;
-  chain_type: string;
-  quote_chain?: number;
-  quote_chain_type: string;
-  check_all_xchain: boolean;
-  base_token?: string;
-  quote_token?: string;
-  env: string;
-  num_requests: number;
-  delay_ms: number;
-};
-
 export async function runQa(
-  argv: QaOptions,
   name: string,
-  authKey: string
+  authKey: string,
+  env: Environment,
+  maker: string,
+  numRequests: number,
+  delayMs: number,
+  chain: Chain,
+  quoteChain?: Chain,
+  checkAllCrossChain = false,
+  baseTokenName?: string,
+  quoteTokenName?: string,
+  evmQaAddress?: string,
+  solanaQaAddress?: string,
+  logFn: LogFn = process.stdout.write
 ): Promise<number> {
-  const maker = argv.maker;
-  const chainType = argv.chain_type as ChainType;
-  const chainId = argv.chain as ChainId;
-  const chain: Chain = { chainType, chainId };
-  const env = argv.env as Environment;
   validateMakerName(maker);
   validateChain(chain);
   validateEnvironment(env);
 
-  const crossChainCheck = argv.check_all_xchain;
+  const crossChainCheck = checkAllCrossChain;
 
-  if (crossChainCheck && argv.quote_chain) {
+  if (crossChainCheck && quoteChain) {
     throw new Error(
       `Can't specify a quote_chain and check_all_xchain simultaneously`
     );
   }
 
-  const maybeQuoteChain = argv.quote_chain
-    ? {
-        chainType: argv.quote_chain_type as ChainType,
-        chainId: argv.quote_chain as ChainId,
-      }
-    : undefined;
-  if (maybeQuoteChain) {
-    validateChain(maybeQuoteChain);
+  if (quoteChain) {
+    validateChain(quoteChain);
   }
 
-  const evmQaAddress = process.env.QA_TAKER_ADDRESS?.toLowerCase();
   if (evmQaAddress) {
     validateEvmAddress(evmQaAddress);
   }
-  const solanaQaAddress = process.env.QA_TAKER_ADDRESS_SOLANA;
   if (solanaQaAddress) {
     validateSolanaAddress(solanaQaAddress);
   }
 
   const hashflow = new HashflowApi('taker', name, authKey, env);
 
-  const numRequests = argv.num_requests;
-  const delayMs = argv.delay_ms;
   const delayMsStr =
     delayMs > 0 ? ` using a delay of ${delayMs}ms between RFQs` : '';
 
-  const pairProvided = argv.base_token && argv.quote_token;
+  const pairProvided = baseTokenName && quoteTokenName;
 
-  process.stdout.write(
+  logFn(
     `QA testing maker '${maker}' against ${env} on chain ${chain.chainType}:${
       chain.chainId
     } ${
-      pairProvided ? ` for ${argv.base_token}-${argv.quote_token}` : ''
+      pairProvided ? ` for ${baseTokenName}-${quoteTokenName}` : ''
     } with ${numRequests} requests/pair${delayMsStr}.\n\n`
   );
 
-  process.stdout.write('Finding active makers ... ');
+  logFn('Finding active makers ... ');
   const makers: string[] = [];
   try {
     const chainMakers = await hashflow.getMarketMakers(chain, undefined, maker);
@@ -121,18 +100,16 @@ export async function runQa(
     }
 
     if (!makers.length) {
-      process.stdout.write(
-        `failed! No maker available ${JSON.stringify(chainMakers)}\n`
-      );
+      logFn(`failed! No maker available ${JSON.stringify(chainMakers)}\n`);
       return 1;
     }
   } catch (err) {
-    process.stdout.write(`failed!  ${(err as Error).toString()}\n`);
+    logFn(`failed!  ${(err as Error).toString()}\n`);
     return 1;
   }
 
   const makersString = makers.length > 1 ? JSON.stringify(makers) : makers[0];
-  process.stdout.write(`done.  ${makersString}\n`);
+  logFn(`done.  ${makersString}\n`);
 
   const makerLevels: Record<
     string,
@@ -143,14 +120,14 @@ export async function runQa(
     }[]
   > = {};
 
-  const quoteChains = maybeQuoteChain
-    ? [maybeQuoteChain]
+  const quoteChains = quoteChain
+    ? [quoteChain]
     : crossChainCheck
-      ? await fetchQuoteChains(hashflow, chain)
+      ? await fetchQuoteChains(hashflow, chain, logFn)
       : [chain];
 
   for (const quoteChain of quoteChains) {
-    process.stdout.write(
+    logFn(
       `Fetching levels for ${makersString} for quoteChain: ${stringifyChain(
         quoteChain
       )}...\n`
@@ -160,14 +137,14 @@ export async function runQa(
       const levels = await hashflow.getPriceLevels(chain, makers, quoteChain);
       const retrievedMakers = Object.keys(levels);
       if (!retrievedMakers.length) {
-        process.stdout.write(`failed!  No maker levels.\n`);
+        logFn(`failed!  No maker levels.\n`);
         return 1;
       }
 
       for (const retrievedMaker of retrievedMakers) {
         const mPairs = levels[retrievedMaker];
         if (!mPairs || !mPairs.length) {
-          process.stdout.write(`failed!  No levels for ${retrievedMaker}.\n`);
+          logFn(`failed!  No levels for ${retrievedMaker}.\n`);
           return 1;
         }
 
@@ -179,15 +156,15 @@ export async function runQa(
           if (
             pairProvided &&
             !(
-              pair.baseTokenName === argv.base_token &&
-              pair.quoteTokenName === argv.quote_token
+              pair.baseTokenName === baseTokenName &&
+              pair.quoteTokenName === quoteTokenName
             )
           ) {
             continue;
           }
 
           if (!levels.length) {
-            process.stdout.write(
+            logFn(
               ` No levels for ${retrievedMaker} on ${entry.pair.baseTokenName}-${entry.pair.quoteTokenName}. Continuing with next pair...\n`
             );
             continue;
@@ -209,10 +186,10 @@ export async function runQa(
         }
       }
     } catch (err) {
-      process.stdout.write(`failed!  ${(err as Error).toString()}\n`);
+      logFn(`failed!  ${(err as Error).toString()}\n`);
       return 1;
     }
-    process.stdout.write('done\n');
+    logFn('done\n');
   }
 
   let totalSuccessRate = 0;
@@ -223,25 +200,25 @@ export async function runQa(
       const pairStr = `${entry.baseToken.name}:${stringifyChain(
         entry.baseToken.chain
       )}-${entry.quoteToken.name}:${stringifyChain(entry.quoteToken.chain)}`;
-      process.stdout.write(`Requesting RFQs for ${maker}: ${pairStr}... `);
+      logFn(`Requesting RFQs for ${maker}: ${pairStr}... `);
 
       const walletForQuoteToken = (quoteToken: Token) => {
         if (quoteToken.chain.chainType === 'evm') {
           if (evmQaAddress === undefined) {
-            process.stdout.write(
+            logFn(
               `Unable to request quotes for ${pairStr}. Must specify a QA_TAKER_ADDRESS environment variable.`
             );
           }
           return evmQaAddress;
         } else if (quoteToken.chain.chainType === 'solana') {
           if (solanaQaAddress === undefined) {
-            process.stdout.write(
+            logFn(
               `Unable to request quotes for ${pairStr}. Must specify a QA_TAKER_ADDRESS_SOLANA environment variable.`
             );
           }
           return solanaQaAddress;
         } else {
-          process.stdout.write(
+          logFn(
             `Unable to request quotes for ${pairStr}. ${quoteToken.chain.chainType} unsupported.`
           );
           return undefined;
@@ -281,15 +258,15 @@ export async function runQa(
             .precision(4)
             .toFixed()} bps`;
 
-          process.stdout.write('done\n');
-          console.log(
+          logFn('done\n');
+          logFn(
             `\nSuccess rate: ${successRateStr}  Avg bias: ${biasStr}  Std deviation: ${stdDevStr}`
           );
-          console.log(
+          logFn(
             `Min level: ${minLevel} ${entry.baseToken.name}  Max level: ${maxLevel} ${entry.baseToken.name}`
           );
 
-          console.log(`\n[P] = Provided in RFQ   [M] = Received from Maker`);
+          logFn(`\n[P] = Provided in RFQ   [M] = Received from Maker`);
 
           const maxBaseDp = Math.max(
             ...results.map(r => r.baseAmount?.precision(7).dp() ?? 0)
@@ -377,7 +354,7 @@ export async function runQa(
               ? JSON.stringify(r.rfqIds)
               : '[--]';
 
-            console.log(
+            logFn(
               `[${indexStr}] ${rfqIdStr.padEnd(
                 maxRfqIdLength,
                 ' '
@@ -385,9 +362,9 @@ export async function runQa(
             );
           }
 
-          console.log('\n');
+          logFn('\n');
         } catch (err) {
-          process.stdout.write(
+          logFn(
             `failed!  ${(err as Error).toString()}. ${JSON.stringify(entry)}\n`
           );
           return 1;
@@ -397,9 +374,9 @@ export async function runQa(
   }
   const totalSR = totalSuccessRate / totalAttempts;
   const totalSuccessRateStr = `${(100 * totalSR).toFixed(2)}%`;
-  process.stdout.write(`Total Success Rate: ${totalSuccessRateStr}\n`);
-  process.stdout.write('QA test completed.\n');
-  process.exit(0);
+  logFn(`Total Success Rate: ${totalSuccessRateStr}\n`);
+  logFn('QA test completed.\n');
+  return 0;
 }
 
 async function testRfqs(

@@ -1,5 +1,7 @@
+import { Chain, ChainId, ChainType } from '@hashflow/taker-js';
 import { runQa } from 'helpers/qa';
 import { getSecretValue } from 'helpers/secrets';
+import { Environment } from 'helpers/types';
 import yargs from 'yargs/yargs';
 
 const parser = yargs(process.argv.slice(2)).options({
@@ -48,8 +50,36 @@ async function main() {
   const { name, key } = await getAuthKey();
 
   const argv = await parser.argv;
+  const maker = argv.maker;
+  const chainType = argv.chain_type as ChainType;
+  const chainId = argv.chain as ChainId;
+  const chain: Chain = { chainType, chainId };
+  const env = argv.env as Environment;
+  const quoteChainType = argv.quote_chain_type as ChainType;
+  const quoteChainId = argv.quote_chain as ChainId;
+  const quoteChain = quoteChainId
+    ? { chainId: quoteChainId, chainType: quoteChainType }
+    : undefined;
+  const evmQaAddress = process.env.QA_TAKER_ADDRESS?.toLowerCase();
+  const solanaQaAddress = process.env.QA_TAKER_ADDRESS_SOLANA;
 
-  process.exit(await runQa(argv, name, key));
+  process.exit(
+    await runQa(
+      name,
+      key,
+      env,
+      maker,
+      argv.num_requests,
+      argv.delay_ms,
+      chain,
+      quoteChain,
+      argv.check_all_xchain,
+      argv.base_token,
+      argv.quote_token,
+      evmQaAddress,
+      solanaQaAddress
+    )
+  );
 }
 
 main();
