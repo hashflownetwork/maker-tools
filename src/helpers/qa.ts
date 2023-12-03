@@ -11,53 +11,9 @@ import {
 } from '@hashflow/taker-js/dist/helpers/validation';
 import BigNumber from 'bignumber.js';
 import { computeLevelsQuote } from 'helpers/levels';
-import { getSecretValue } from 'helpers/secrets';
 import { convertFromDecimals, convertToDecimals } from 'helpers/token';
 import { Environment, PriceLevel, Token } from 'helpers/types';
 import { validateEnvironment, validateMakerName } from 'helpers/validation';
-import yargs from 'yargs/yargs';
-
-const parser = yargs(process.argv.slice(2)).options({
-  maker: { string: true, demandOption: true },
-  chain: { number: true, demandOption: true },
-  chain_type: { string: true, default: 'evm' },
-  quote_chain: { number: true },
-  quote_chain_type: { string: true, default: 'evm' },
-  check_all_xchain: { boolean: true, default: false },
-  base_token: { string: true, default: undefined },
-  quote_token: { string: true, default: undefined },
-  env: { string: true, default: 'staging' },
-  num_requests: { number: true, default: 30 },
-  delay_ms: { number: true, default: 0 },
-});
-
-async function getAuthKey(): Promise<{ name: string; key: string }> {
-  const AUTH_SECRET_NAME = process.env.AUTH_SECRET_NAME;
-  if (!AUTH_SECRET_NAME) {
-    const SOURCE = process.env.SOURCE ?? 'qa';
-    const AUTH_KEY = process.env.AUTH_KEY;
-    if (!AUTH_KEY) {
-      throw new Error(
-        `Please specify your auth key in src/.env under AUTH_KEY`
-      );
-    }
-    return { name: SOURCE, key: AUTH_KEY };
-  } else {
-    const AUTH_SECRET_REGION = process.env.AUTH_SECRET_REGION;
-    if (!AUTH_SECRET_REGION) {
-      throw new Error(`Please specify your AUTH_SECRET_REGION in src/.env`);
-    }
-    const secretJson = await getSecretValue(
-      AUTH_SECRET_REGION,
-      AUTH_SECRET_NAME
-    );
-    const { name, key } = JSON.parse(secretJson);
-    if (!key) {
-      throw new Error(`Unable to parse key from secrets manager`);
-    }
-    return { name, key };
-  }
-}
 
 async function fetchQuoteChains(
   hashflow: HashflowApi,
@@ -81,11 +37,25 @@ function stringifyChain(chain: Chain): string {
   return `${chain.chainType}_${chain.chainId}`;
 }
 
-export async function handler(): Promise<number> {
-  const { name, key } = await getAuthKey();
+type QaOptions = {
+  maker: string;
+  chain: number;
+  chain_type: string;
+  quote_chain?: number;
+  quote_chain_type: string;
+  check_all_xchain: boolean;
+  base_token?: string;
+  quote_token?: string;
+  env: string;
+  num_requests: number;
+  delay_ms: number;
+};
 
-  const argv = await parser.argv;
-
+export async function runQa(
+  argv: QaOptions,
+  name: string,
+  authKey: string
+): Promise<number> {
   const maker = argv.maker;
   const chainType = argv.chain_type as ChainType;
   const chainId = argv.chain as ChainId;
@@ -122,7 +92,7 @@ export async function handler(): Promise<number> {
     validateSolanaAddress(solanaQaAddress);
   }
 
-  const hashflow = new HashflowApi('taker', name, key, env);
+  const hashflow = new HashflowApi('taker', name, authKey, env);
 
   const numRequests = argv.num_requests;
   const delayMs = argv.delay_ms;
@@ -687,4 +657,3 @@ function extractExpectedAmount(
   );
   return !failure && !!amount ? amount : undefined;
 }
-
