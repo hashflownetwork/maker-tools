@@ -48,7 +48,7 @@ export async function runQa(
   quoteTokenName?: string,
   evmQaAddress?: string,
   solanaQaAddress?: string,
-  logFn: LogFn = process.stdout.write
+  logFn: LogFn = (message: string) => process.stdout.write(message)
 ): Promise<number> {
   validateMakerName(maker);
   validateChain(chain);
@@ -266,7 +266,7 @@ export async function runQa(
             `Min level: ${minLevel} ${entry.baseToken.name}  Max level: ${maxLevel} ${entry.baseToken.name}`
           );
 
-          logFn(`\n[P] = Provided in RFQ   [M] = Received from Maker`);
+          logFn(`\n[P] = Provided in RFQ   [M] = Received from Maker\n`);
 
           const maxBaseDp = Math.max(
             ...results.map(r => r.baseAmount?.precision(7).dp() ?? 0)
@@ -358,7 +358,7 @@ export async function runQa(
               `[${indexStr}] ${rfqIdStr.padEnd(
                 maxRfqIdLength,
                 ' '
-              )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}`
+              )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}\n`
             );
           }
 
