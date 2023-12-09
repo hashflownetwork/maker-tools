@@ -23,7 +23,7 @@
     "node": ">=16.14.0",
     "yarn": "^1.22.10"
   },
-  "author": "Michael Blind <michael@hashflow.com>",
+  "author": "Hashflow Foundation",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.418.0",
