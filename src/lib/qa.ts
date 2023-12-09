@@ -4,11 +4,12 @@ import {
   validateSolanaAddress,
 } from '@hashflow/taker-js/dist/helpers/validation';
 import BigNumber from 'bignumber.js';
-import { computeLevelsQuote } from 'helpers/levels';
-import { convertFromDecimals, convertToDecimals } from 'helpers/token';
-import { Environment, PriceLevel, Token } from 'helpers/types';
-import { validateEnvironment, validateMakerName } from 'helpers/validation';
 import seedrandom from 'seedrandom';
+
+import { computeLevelsQuote } from '../helpers/levels';
+import { convertFromDecimals, convertToDecimals } from '../helpers/token';
+import { Environment, PriceLevel, Token } from '../helpers/types';
+import { validateEnvironment, validateMakerName } from '../helpers/validation';
 
 type LogFn = (message: string) => void;
 

@@ -1,8 +1,9 @@
 import { Chain, ChainId, ChainType } from '@hashflow/taker-js';
-import { getSecretValue } from 'helpers/secrets';
-import { Environment } from 'helpers/types';
-import { runQa } from 'lib/qa';
 import yargs from 'yargs/yargs';
+
+import { getSecretValue } from '../helpers/secrets';
+import { Environment } from '../helpers/types';
+import { runQa } from '../lib/qa';
 
 const parser = yargs(process.argv.slice(2)).options({
   maker: { string: true, demandOption: true },

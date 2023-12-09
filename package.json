@@ -2,13 +2,25 @@
   "name": "maker-tools",
   "version": "0.0.2",
   "description": "Tools to help market makers on Hashflow operate on the exchange",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
+    "build:tsc": "rm -rf dist/ && tsc",
+    "build:lint": "eslint .",
+    "build": "yarn build:lint && yarn build:tsc",
     "eslint": "eslint ./src --ext .ts,.tsx",
     "prettier": "prettier --config ./.prettierrc.js --write .",
-    "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env"
+    "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env",
+    "tsc": "tsc",
+    "test": "yarn jest --forceExit"
   },
   "engines": {
-    "node": ">=14.18.1",
+    "node": ">=16.14.0",
     "yarn": "^1.22.10"
   },
   "author": "Michael Blind <michael@hashflow.com>",
@@ -41,6 +53,7 @@
     "prettier": "^3.1.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
+    "ts-jest": "^29.1.1",
     "typescript": "^4.9.5"
   }
 }

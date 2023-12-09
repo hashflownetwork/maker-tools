@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
-import { PriceLevel } from 'helpers/types';
 
+import { PriceLevel } from '../helpers/types';
 import { computeLevelsQuote } from './levels';
 
 function computeLevelsWrapper(
