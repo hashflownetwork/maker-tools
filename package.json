@@ -11,12 +11,10 @@
   ],
   "scripts": {
     "build:tsc": "rm -rf dist/ && tsc",
-    "build:lint": "eslint .",
-    "build": "yarn build:lint && yarn build:tsc",
-    "eslint": "eslint ./src --ext .ts,.tsx",
+    "build:eslint": "eslint .",
+    "build": "yarn build:eslint && yarn build:tsc",
     "prettier": "prettier --config ./.prettierrc.js --write .",
-    "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env",
-    "tsc": "tsc"
+    "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env"
   },
   "engines": {
     "node": ">=16.14.0",
