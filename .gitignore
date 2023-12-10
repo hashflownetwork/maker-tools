@@ -25,3 +25,5 @@ dump.rdb
 src/scripts/gen/*
 !src/scripts/gen/.gitkeep
 
+# IntelliJ
+.idea
