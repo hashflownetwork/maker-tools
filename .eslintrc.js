@@ -1,7 +1,6 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: [
-    'react',
     'simple-import-sort',
     'import',
     'unused-imports',

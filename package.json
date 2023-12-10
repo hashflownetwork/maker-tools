@@ -16,8 +16,7 @@
     "eslint": "eslint ./src --ext .ts,.tsx",
     "prettier": "prettier --config ./.prettierrc.js --write .",
     "qa": "ts-node --files -r dotenv/config ./src/scripts/qa.ts dotenv_config_path=./src/.env",
-    "tsc": "tsc",
-    "test": "yarn jest --forceExit"
+    "tsc": "tsc"
   },
   "engines": {
     "node": ">=16.14.0",
