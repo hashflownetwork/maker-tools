@@ -27,6 +27,9 @@ jobs:
       - run:
           name: TSC
           command: yarn tsc
+      - run:
+         name: Test
+         command: yarn jest
 
 workflows:
   test:
