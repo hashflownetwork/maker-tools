@@ -19,10 +19,12 @@
     "@hashflow/taker-js": "^0.3.6",
     "bignumber.js": "^9.1.1",
     "ethers": "6.7.0",
+    "seedrandom": "^3.0.5",
     "yargs": "^17.6.2"
   },
   "devDependencies": {
     "@types/jest": "^29.5.11",
+    "@types/seedrandom": "^3.0.8",
     "@types/yargs": "^17.0.22",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
