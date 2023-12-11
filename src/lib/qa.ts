@@ -518,7 +518,6 @@ async function testRfqs(
         };
       }
 
-      console.log(levels);
       /* Compute expected amounts (including fees) */
       const expectedToken = provided === 'base' ? quoteToken : baseToken;
       const expectedAmountAmountRaw =
