@@ -16,6 +16,7 @@ const parser = yargs(process.argv.slice(2)).options({
   env: { string: true, default: 'staging' },
   num_requests: { number: true, default: 30 },
   delay_ms: { number: true, default: 0 },
+  seed: { string: true },
 });
 
 async function getAuthKey(): Promise<{ name: string; key: string }> {
@@ -77,7 +78,8 @@ async function main() {
       argv.base_token,
       argv.quote_token,
       evmQaAddress,
-      solanaQaAddress
+      solanaQaAddress,
+      argv.seed
     )
   );
 }

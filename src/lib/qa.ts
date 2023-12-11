@@ -8,6 +8,7 @@ import { computeLevelsQuote } from 'helpers/levels';
 import { convertFromDecimals, convertToDecimals } from 'helpers/token';
 import { Environment, PriceLevel, Token } from 'helpers/types';
 import { validateEnvironment, validateMakerName } from 'helpers/validation';
+import seedrandom from 'seedrandom';
 
 type LogFn = (message: string) => void;
 
@@ -48,11 +49,14 @@ export async function runQa(
   quoteTokenName?: string,
   evmQaAddress?: string,
   solanaQaAddress?: string,
+  seed?: string,
   logFn: LogFn = (message: string) => process.stdout.write(message)
 ): Promise<number> {
   validateMakerName(maker);
   validateChain(chain);
   validateEnvironment(env);
+
+  const rng = seedrandom(seed ?? Date.now().toString());
 
   const crossChainCheck = checkAllCrossChain;
 
@@ -237,7 +241,8 @@ export async function runQa(
               delayMs,
               maker,
               chain,
-              entry
+              entry,
+              rng
             );
           totalSuccessRate += successRate;
           totalAttempts += 1;
@@ -386,7 +391,8 @@ async function testRfqs(
   delayMs: number,
   maker: string,
   chain: Chain,
-  entry: { baseToken: Token; quoteToken: Token; levels: PriceLevel[] }
+  entry: { baseToken: Token; quoteToken: Token; levels: PriceLevel[] },
+  rng: seedrandom.PRNG
 ): Promise<{
   successRate: number;
   biasBps: number;
@@ -433,8 +439,8 @@ async function testRfqs(
   }> => {
     const { baseToken, quoteToken } = entry;
 
-    const provided = Math.random() < 0.5 ? 'base' : 'quote';
-    const baseAmount = new BigNumber(Math.random())
+    const provided = rng() < 0.5 ? 'base' : 'quote';
+    const baseAmount = new BigNumber(rng())
       .multipliedBy(maxLevel.minus(minLevel))
       .plus(minLevel);
 
