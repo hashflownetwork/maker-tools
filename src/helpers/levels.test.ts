@@ -63,8 +63,9 @@ describe('computeLevelsQuote', () => {
           { q: '50.0', p: '0.99' },
           { q: '100.0', p: '0.9' },
         ],
-        undefined,
-        BigNumber('40.4')
+          BigNumber('40.4'),
+          undefined
+
       )
     ).toBeCloseTo(40);
   });
