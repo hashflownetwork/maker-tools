@@ -30,6 +30,7 @@ To run this script, follow these steps:
     * ***(Optional) `--num_requests`***: Number of RFQs to send for each pair. Default is `--num_requests=30`.
     * ***(Optional) `--delay_ms`***: Delay to introduce between each RFQ in milliseconds. This can be useful to test pricing skew over a longer period of time. Default is `--delay_ms=0`.
     * ***(Optional) `--round_trips`***: After receiving a quote, send another quote request with the received amount to check parity with provided amount.
+    * ***(Optional) `--seed`***: Set the random number generator seed to provide replicatable results.
     
 #### Interpreting the results
 When running the script, you're going to see output in the terminal that looks something like this (slightly edited version):
