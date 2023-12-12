@@ -150,7 +150,7 @@ export async function runQa(
         const mPairs = levels[retrievedMaker];
         if (!mPairs || !mPairs.length) {
           logFn(`failed!  No levels for ${retrievedMaker}.\n`);
-          return 1;
+          continue;
         }
 
         if (!makerLevels[retrievedMaker]) {
