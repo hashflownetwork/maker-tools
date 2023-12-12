@@ -16,6 +16,7 @@ const parser = yargs(process.argv.slice(2)).options({
   env: { string: true, default: 'staging' },
   num_requests: { number: true, default: 30 },
   delay_ms: { number: true, default: 0 },
+  round_trips: { boolean: true, default: false },
   seed: { string: true },
 });
 
@@ -75,6 +76,7 @@ async function main() {
       chain,
       quoteChain,
       argv.check_all_xchain,
+      argv.round_trips,
       argv.base_token,
       argv.quote_token,
       evmQaAddress,

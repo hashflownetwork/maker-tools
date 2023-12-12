@@ -45,6 +45,7 @@ export async function runQa(
   chain: Chain,
   quoteChain?: Chain,
   checkAllCrossChain = false,
+  roundTrips = false,
   baseTokenName?: string,
   quoteTokenName?: string,
   evmQaAddress?: string,
@@ -242,6 +243,7 @@ export async function runQa(
               maker,
               chain,
               entry,
+              roundTrips,
               rng
             );
           totalSuccessRate += successRate;
@@ -278,6 +280,14 @@ export async function runQa(
           );
           const maxQuoteDp = Math.max(
             ...results.map(r => r.quoteAmount?.precision(7).dp() ?? 0)
+          );
+          const maxRtOp = Math.max(
+            ...results.map(r => r.roundTripAmount?.precision(7).dp() ?? 0)
+          );
+          const maxRtDigits = Math.max(
+            ...results.map(
+              r => r.roundTripAmount?.toFormat(maxRtOp).length ?? 0
+            )
           );
 
           const maxBaseDigits = Math.max(
@@ -331,6 +341,11 @@ export async function runQa(
                 ? { t: entry.quoteToken.name, dp: maxQuoteDp }
                 : { t: entry.baseToken.name, dp: maxBaseDp };
 
+            const roundTripToken =
+              r?.provided === 'base'
+                ? entry.baseToken.name
+                : entry.quoteToken.name;
+
             const expectedAmountStr = `expected: ${r?.expectedAmount
               ?.toFormat(maxExpDp)
               ?.padStart(maxExpectedDigits, ' ')} ${tokenExp.padEnd(
@@ -340,6 +355,17 @@ export async function runQa(
               ),
               ' '
             )}`;
+
+            const roundTripAmountStr = roundTrips
+              ? `roundTrip: ${r?.roundTripAmount
+                  ?.toFormat(maxRtOp)
+                  ?.padStart(maxRtDigits, ' ')} ${roundTripToken.padEnd(
+                  Math.max(
+                    entry.baseToken.name.length,
+                    entry.quoteToken.name.length
+                  )
+                )}`
+              : '';
 
             const devSign = r?.deviationBps?.gt(0) ? '+' : '';
             const deviation = `${devSign}${r?.deviationBps
@@ -363,7 +389,7 @@ export async function runQa(
               `[${indexStr}] ${rfqIdStr.padEnd(
                 maxRfqIdLength,
                 ' '
-              )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${deviationStr}  ${feesStr}  ${failStr}\n`
+              )}  ${baseAmountStr}  ${quoteAmountStr}  ${expectedAmountStr}  ${roundTripAmountStr} ${deviationStr}  ${feesStr}  ${failStr}\n`
             );
           }
 
@@ -392,6 +418,7 @@ async function testRfqs(
   maker: string,
   chain: Chain,
   entry: { baseToken: Token; quoteToken: Token; levels: PriceLevel[] },
+  roundTrips: boolean,
   rng: seedrandom.PRNG
 ): Promise<{
   successRate: number;
@@ -406,6 +433,7 @@ async function testRfqs(
     feesBps?: number;
     failMsg?: string;
     rfqIds?: string[];
+    roundTripAmount?: BigNumber;
   }[];
 }> {
   let numSuccess = 0;
@@ -436,6 +464,7 @@ async function testRfqs(
     feesBps?: number;
     failMsg?: string;
     rfqIds?: string[];
+    roundTripAmount?: BigNumber;
   }> => {
     const { baseToken, quoteToken } = entry;
 
@@ -520,15 +549,16 @@ async function testRfqs(
 
       /* Compute expected amounts (including fees) */
       const expectedToken = provided === 'base' ? quoteToken : baseToken;
-      const expectedAmountAmountRaw =
+
+      const expectedAmountRaw =
         provided === 'base'
           ? extractExpectedAmount(levels, baseAmount, undefined)
           : extractExpectedAmount(levels, undefined, quoteAmount);
 
       const expectedAmount =
         provided === 'base'
-          ? expectedAmountAmountRaw?.multipliedBy(feeFactor)
-          : expectedAmountAmountRaw?.dividedBy(feeFactor);
+          ? expectedAmountRaw?.multipliedBy(feeFactor)
+          : expectedAmountRaw?.dividedBy(feeFactor);
 
       if (!expectedAmount) {
         return {
@@ -540,6 +570,7 @@ async function testRfqs(
           )}`,
         };
       }
+
       const expectedAmountDecimals = convertToDecimals(
         expectedAmount,
         expectedToken
@@ -571,6 +602,43 @@ async function testRfqs(
         expectedToken
       );
 
+      const roundTripQuote = async () => {
+        if (roundTrips) {
+          const roundTripQuote = await hashflow.requestQuote({
+            baseChain: chain,
+            quoteChain: quoteToken.chain,
+            baseToken: baseToken.address,
+            quoteToken: quoteToken.address,
+            baseTokenAmount:
+              provided === 'base'
+                ? undefined
+                : receivedAmountDecimals.toFixed(),
+            quoteTokenAmount:
+              provided === 'quote'
+                ? undefined
+                : receivedAmountDecimals.toFixed(),
+            wallet: wallet,
+            marketMakers: [maker],
+            feesBps: feesBps,
+            debug: true,
+          });
+          if (roundTripQuote.status === 'success') {
+            const roundTripAmountDecimals = new BigNumber(
+              provided === 'base'
+                ? rfq?.quotes?.[0]?.quoteData?.baseTokenAmount ?? '0'
+                : rfq?.quotes?.[0]?.quoteData?.quoteTokenAmount ?? '0'
+            );
+            return convertFromDecimals(
+              roundTripAmountDecimals,
+              provided === 'base' ? baseToken : quoteToken
+            );
+          }
+        }
+        return undefined;
+      };
+
+      const roundTripAmount = await roundTripQuote();
+
       /* Compute RFQ-levels deviation */
       const deviationFactor = provided === 'base' ? -1 : 1;
       let deviationBps = receivedAmountDecimals
@@ -596,6 +664,7 @@ async function testRfqs(
         deviationBps,
         feesBps,
         rfqIds: [rfq.rfqId] ?? [],
+        roundTripAmount,
       };
     } catch (err) {
       return {
