@@ -586,7 +586,7 @@ async function testRfqs(
           quoteAmount,
           expectedAmount,
           feesBps,
-          rfqIds: rfq.internalRfqIds ?? [],
+          rfqIds: [rfq.rfqId] ?? [],
           failMsg: `No quote data. Received error: ${JSON.stringify(
             rfq.error
           )}`,
