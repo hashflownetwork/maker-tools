@@ -1,6 +1,6 @@
 {
-  "name": "maker-tools",
-  "version": "0.0.2",
+  "name": "@hashflow/maker-tools",
+  "version": "0.0.1",
   "description": "Tools to help market makers on Hashflow operate on the exchange",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
