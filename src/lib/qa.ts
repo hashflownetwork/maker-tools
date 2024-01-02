@@ -16,10 +16,11 @@ type LogFn = (message: string) => void;
 async function fetchQuoteChains(
   hashflow: HashflowApi,
   chain: Chain,
+  marketMaker: string,
   logFn: LogFn
 ): Promise<Chain[]> {
   logFn(`Fetching all available quote chains...`);
-  const tradingPairs = await hashflow.getTradingPairs(chain);
+  const tradingPairs = await hashflow.getTradingPairs(chain, marketMaker);
   const chains = tradingPairs.pairs.map(p => p.quoteToken.chain);
   const seen: string[] = [];
   const dedupChains: Chain[] = [];
@@ -129,7 +130,7 @@ export async function runQa(
   const quoteChains = quoteChain
     ? [quoteChain]
     : crossChainCheck
-      ? await fetchQuoteChains(hashflow, chain, logFn)
+      ? await fetchQuoteChains(hashflow, chain, maker, logFn)
       : [chain];
 
   for (const quoteChain of quoteChains) {
