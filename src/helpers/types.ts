@@ -1,5 +1,4 @@
-import { Networks } from '@hashflow/sdk';
-import { Chain, ChainId, ChainType } from '@hashflow/taker-js';
+import { Chain } from '@hashflow/taker-js';
 import BigNumber from 'bignumber.js';
 
 export const ENVIRONMENTS = ['development', 'production', 'staging'] as const;
@@ -21,10 +20,3 @@ export type Token = {
   address: string;
   decimals: number;
 };
-
-type NetworkName = keyof typeof Networks;
-
-export const CHAIN_TYPES: ChainType[] = ['evm', 'solana'];
-export const CHAIN_IDS: ChainId[] = Object.keys(Networks).map(
-  k => Networks[k as NetworkName]!.chainId as ChainId
-);
