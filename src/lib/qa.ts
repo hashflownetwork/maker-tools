@@ -452,10 +452,13 @@ async function testRfqs(
   }
 
   const minLevel = new BigNumber(preLevels[0]?.q ?? '0');
-  const maxLevel = BigNumber.max(
-    new BigNumber(preLevels[preLevels.length - 1]?.q ?? '0').multipliedBy(0.95),
-    minLevel
-  );
+  let maxLevel = new BigNumber(0);
+
+  for (const level of preLevels) {
+    maxLevel = maxLevel.plus(level.q);
+  }
+
+  maxLevel = BigNumber.max(maxLevel.multipliedBy(0.95), minLevel);
 
   const sendRfq = async (): Promise<{
     provided: 'base' | 'quote';
